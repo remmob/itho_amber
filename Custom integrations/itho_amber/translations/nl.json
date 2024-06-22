@@ -1,0 +1,21 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Definieer uw Itho Amber warmtepomp modbus-verbinding",
+        "data": {
+          "host": "Het ip-adres van uw Itho Amber warmtepomp modbus apparaat",
+          "name": "Het voorvoegsel dat moet worden gebruikt voor uw Itho Amber warmtepomp sensoren",
+          "port": "De TCP-poort waarop verbinding moet worden gemaakt met de Itho Amber warmtepomp",
+          "scan_interval": "De polling-frequentie van de modbus registratie in seconden"
+        }
+      }
+    },
+    "error": {
+      "already_configured": "Apparaat is al geconfigureerd"
+    },
+    "abort": {
+      "already_configured": "Apparaat is al geconfigureerd"
+    }
+  }
+}
