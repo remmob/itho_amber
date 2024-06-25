@@ -1,5 +1,3 @@
-![Project Maintenance][maintenance-shield]
-
 # Itho Daalderop Amber Heat pump integration
 Home Assistant integration for Itho Daalderop Amber heat pump.<br>
 The Amber heat pump family contains 3 models.
@@ -75,3 +73,5 @@ After rebooting Home Assistant, this integration can be configured through the i
 - Weekly clocks\timers. They can not be written. Timers with automations  
   in Home Assistant makes much more sense.
   But if people really need to read the timmer values, I will reconsider my decision.
+
+
