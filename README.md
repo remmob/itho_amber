@@ -1,3 +1,5 @@
+![Project Maintenance][maintenance-shield]
+
 # Itho Daalderop Amber Heat pump integration
 Home Assistant integration for Itho Daalderop Amber heat pump.<br>
 The Amber heat pump family contains 3 models.
@@ -28,7 +30,7 @@ It is possible to use a Raspberry Pi 2 or higer as gateway with
 ### HACS
 Install with [HACS](http://www.hacs.xyz) Search for Itho Amber in the default repository.
 ### Manual 
-Copy the itho_amber folder in the custom_components folder into your Home Assistant config/custom_components folder.<br>
+Copy the `itho_amber` folder in the `custom_components` folder into your Home Assistant `config/custom_components` folder.<br>
 After rebooting Home Assistant, this integration can be configured through the integration setup UI.
 
 ## Settings
@@ -59,7 +61,7 @@ After rebooting Home Assistant, this integration can be configured through the i
     When a Modbus value is written, the days when the legionella program 
     runs, get altered.<br>
     This is known tot Itho and will be resolved in the next update.<br>
-    Please contact your installer for information about software updates.
+    Please contact your installer for information about and how to get the software updates.
 -   Settings M1.01, M1.20 and M9.05 have different bandwidth in the Modbus 
     than through the LCD controller.<br>
     For example: M1.01 can be set in the LCD between 1-5°C, in the Modbus
