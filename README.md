@@ -1,23 +1,23 @@
-# Itho Daalderop Amber Heatpump integration
-Home Assistant integration for Itho Daalderop Amber heatpump.<br>
-The Amber heatpump family contains 3 models.
+# Itho Daalderop Amber Heat pump integration
+Home Assistant integration for Itho Daalderop Amber heat pump.<br>
+The Amber heat pump family contains 3 models.
 - 65 (6,5Kw)
 - 95 (9,5K)
 - 120 (12Kw)
 
-Altough only tested with the Amber 95. It should work fine with the other two models.
+Although only tested with the Amber 95. It should work fine with the other two models.
 
 The Itho Daalderop Amber is produced in Asia for the West European market.<br>
-Using a WIN CE as controller with custom version of the heatstar software.
+Using a WIN CE as a controller with a custom version of the Heatstar software.
 
-Altough there are models/brands using the same controller it is not advisible
+Although there are models/brands using the same controller it is not advisible
 to use this integration with other than the three Itho Amber models.
-Because of the custom version of the heatstar software.<br>And
-doing so, can cause damage to your heatpump.
+Because of the custom version of the Heatstar software.<br>And
+doing so can cause damage to your heat pump.
 ### <u>Modbus&nbsp;</u>
-This integration uses the external modbus connection on the back of the LCD controller.<br>com3, connections 7 (RS485A) & 8 (RS485B). 
+This integration uses the external Modbus connection on the back of the LCD controller.<br>com3, connections 7 (RS485A) & 8 (RS485B). 
 ### <u>Hardware&nbsp;</u>
-For this Home Assistant integration, the RS485 serial modbus connection must be converted to modbus TCP/IP.<br>
+For this Home Assistant integration, the RS485 serial Modbus connection must be converted to Modbus TCP/IP.<br>
 This can be done with standard of shelf modbus RTU RS485 to TCP/IP gateways.<br>
 [Waveshare](https://www.waveshare.com) as example, has afordable gateways.<br>
 It is possible to use a Raspberry Pi 2 or higer as gateway with 
@@ -28,7 +28,7 @@ It is possible to use a Raspberry Pi 2 or higer as gateway with
 ### HACS
 Install with [HACS](http://www.hacs.xyz) Search for Itho Amber in the default repository.
 ### Manual 
-Copy the itho_amber folder in the custom_components folder in to your Home Assistant config/custom_components folder.<br>
+Copy the itho_amber folder in the custom_components folder into your Home Assistant config/custom_components folder.<br>
 After rebooting Home Assistant, this integration can be configured through the integration setup UI.
 
 ## Settings
@@ -56,20 +56,20 @@ After rebooting Home Assistant, this integration can be configured through the i
 
 ## Known issues
 -   The first V2.29 software, released in 5-2024 contains a bug.<br>
-    When a modbus value is written, the days when the legionella program 
+    When a Modbus value is written, the days when the legionella program 
     runs, get altered.<br>
     This is known tot Itho and will be resolved in the next update.<br>
     Please contact your installer for information about software updates.
--   Settings M1.01, M1.20 and M9.05 have different bandwith in the Modbus 
+-   Settings M1.01, M1.20 and M9.05 have different bandwidth in the Modbus 
     than through the LCD controller.<br>
-    For example: M1.01 can be set in the LCD beteen 1-5°C, in the Modbus
-    between 1-3°C. When set above 3°C in the LCD, will display correct in the integration<br>
+    For example: M1.01 can be set in the LCD between 1-5°C, in the Modbus
+    between 1-3°C. When set above 3°C in the LCD, will display correctly in the integration<br>
     When you set it to 5 in the integration, it reverts back to max 3°C.
--   Some values are read only. I do not understand why this choice was made by 
-    Itho, I have asked them<br> to make all settings writeble... To be continued... 
+-   Some values are read-only. I do not understand why this choice was made by 
+    Itho, I have asked them<br> to make all settings writeable... To be continued... 
 
 ## Roadmap
 - Adding error codes
-- Weekly clocks\timers. The can not be written. Timers with automations  
-  in Home Assistant makes much more sens.
-  But if people really need read the timmer values, I will reconsider my decicion.
+- Weekly clocks\timers. They can not be written. Timers with automations  
+  in Home Assistant makes much more sense.
+  But if people really need to read the timmer values, I will reconsider my decision.
