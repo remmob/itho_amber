@@ -1,10 +1,75 @@
 # Itho Daalderop Amber Heatpump integration
-Home Assistant integration for Itho Daalderop Amber heatpump.
+Home Assistant integration for Itho Daalderop Amber heatpump.<br>
+The Amber heatpump family contains 3 models.
+- 65 (6,5Kw)
+- 95 (9,5K)
+- 120 (12Kw)
+
+Altough only tested with the Amber 95. It should work fine with the other two models.
+
+The Itho Daalderop Amber is produced in Asia for the West European market.<br>
+Using a WIN CE as controller with custom version of the heatstar software.
+
+Altough there are models/brands using the same controller it is not advisible
+to use this integration with other than the three Itho Amber models.
+Because of the custom version of the heatstar software.<br>And
+doing so, can cause damage to your heatpump.
+### <u>Modbus&nbsp;</u>
+This integration uses the external modbus connection on the back of the LCD controller.<br>com3, connections 7 (RS485A) & 8 (RS485B). 
+### <u>Hardware&nbsp;</u>
+For this Home Assistant integration, the RS485 serial modbus connection must be converted to modbus TCP/IP.<br>
+This can be done with standard of shelf modbus RTU RS485 to TCP/IP gateways.<br>
+[Waveshare](https://www.waveshare.com) as example, has afordable gateways.<br>
+It is possible to use a Raspberry Pi 2 or higer as gateway with 
+[this](https://github.com/3cky/mbusd) software.
+
 
 # Installation
 ### HACS
-Install with HACS Search for Itho Amber in the default repository.
+Install with [HACS](http://www.hacs.xyz) Search for Itho Amber in the default repository.
 ### Manual 
-Copy the itho_amber folder in the custom in to your Home Assistant config/custom_components folder.
+Copy the itho_amber folder in the custom_components folder in to your Home Assistant config/custom_components folder.<br>
 After rebooting Home Assistant, this integration can be configured through the integration setup UI.
 
+## Settings
+### Modbus settings
+#### Serial: \[\<waveshare\>gateway\]
+- Baudrate: 19200 k/bits
+- Databits: 8
+- stopbit: 1
+- flow control: none
+- parity: none
+#### TCP/IP: \[\<waveshare\>gateway\]
+- Device IP: \<IP-address of your (Waveshare) gateway\>
+- Subnet mask: \<depends on your network settings (default: 255.255.255.0)>
+- Device & destination port: \<default-port: 502\>
+- workmode: \<TCP server\>
+- device web port: \<80\>
+- gateway: \<IP-address-your-router\>
+- multihost settings protocol: \<Modbus TCP to RTU\>
+### Integration:
+- prefix: used for the entity names. (default: amber)<br>
+    <i>example: sensor.amber_ambient_temperture_ta</i>
+- IP-address: \<IP-address of your gateway\>
+- port: \<default-port: 502\> 
+- polling time: \<default: 10 seconds\>
+
+## Known issues
+-   The first V2.29 software, released in 5-2024 contains a bug.<br>
+    When a modbus value is written, the days when the legionella program 
+    runs, get altered.<br>
+    This is known tot Itho and will be resolved in the next update.<br>
+    Please contact your installer for information about software updates.
+-   Settings M1.01, M1.20 and M9.05 have different bandwith in the Modbus 
+    than through the LCD controller.<br>
+    For example: M1.01 can be set in the LCD beteen 1-5°C, in the Modbus
+    between 1-3°C. When set above 3°C in the LCD, will display correct in the integration<br>
+    When you set it to 5 in the integration, it reverts back to max 3°C.
+-   Some values are read only. I do not understand why this choice was made by 
+    Itho, I have asked them<br> to make all settings writeble... To be continued... 
+
+## Roadmap
+- Adding error codes
+- Weekly clocks\timers. The can not be written. Timers with automations  
+  in Home Assistant makes much more sens.
+  But if people really need read the timmer values, I will reconsider my decicion.
