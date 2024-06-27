@@ -17,7 +17,7 @@ doing so can cause damage to your heat pump.
 ### <u>Sensor Updates&nbsp;</u>
 After changing a sensor value, it can take up sometime (poling time) before it updates.
 ### <u>Modbus&nbsp;</u>
-This integration uses the external Modbus connection on the back of the LCD controller.<br>com3, connections 7 (RS485A) & 8 (RS485B). 
+This integration uses the external Modbus connection on the back of the LCD controller.<br>com3, connections 7 (RS485B) & 8 (RS485A). 
 ### <u>Hardware&nbsp;</u>
 For this Home Assistant integration, the RS485 serial Modbus connection must be converted to Modbus TCP/IP.<br>
 This can be done with standard of shelf modbus RTU RS485 to TCP/IP gateways.<br>
