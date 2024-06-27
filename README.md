@@ -14,6 +14,8 @@ Although there are models/brands using the same controller it is not advisible
 to use this integration with other than the three Itho Amber models.
 Because of the custom version of the Heatstar software.<br>And
 doing so can cause damage to your heat pump.
+### <u>Sensor Updates&nbsp;</u>
+After changing a sensor value, it can take up sometime (poling time) before it updates.
 ### <u>Modbus&nbsp;</u>
 This integration uses the external Modbus connection on the back of the LCD controller.<br>com3, connections 7 (RS485A) & 8 (RS485B). 
 ### <u>Hardware&nbsp;</u>
