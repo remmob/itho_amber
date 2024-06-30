@@ -74,6 +74,6 @@ After rebooting Home Assistant, this integration can be configured through the i
 - Adding error codes
 - Weekly clocks\timers. They can not be written. Timers with automations  
   in Home Assistant makes much more sense.
-  But if people really need to read the timmer values, I will reconsider my decision.
+  
 
 
