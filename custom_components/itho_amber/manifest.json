@@ -1,10 +1,10 @@
 {
     "domain": "itho_amber",
-    "name": "Itho amber",
+    "name": "Itho Daalderop amber",
     "codeowners": ["@remmob"],
     "config_flow": true,
-    "issue_tracker": "https://github.com/remmob/itho_amber/issues",
     "documentation": "https://github.com/remmob/itho_amber",
+    "issue_tracker": "https://github.com/remmob/itho_amber/issues",
     "iot_class": "local_polling",
     "requirements": ["pymodbus>=3.5.4"],
     "version": "0.1.0"
