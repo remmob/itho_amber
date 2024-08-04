@@ -27,8 +27,11 @@ It is possible to use a Raspberry Pi 2 or higer as gateway with
 
 
 # Installation
-### HACS
-Install with [HACS](http://www.hacs.xyz) Search for Itho Amber in the default repository.
+### HACS Custom Repository
+On the HACS main page, hit the triple dots menu upper right corner.
+click on custom repositories and add https://github.com/remmob/itho_amber as URL
+the category must be integration. Click add to save.
+
 ### Manual 
 Copy the `itho_amber` folder in the `custom_components` folder into your Home Assistant `config/custom_components` folder.<br>
 After rebooting Home Assistant, this integration can be configured through the integration setup UI.
