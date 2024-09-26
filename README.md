@@ -22,9 +22,9 @@ This integration uses the external Modbus connection on the back of the LCD cont
 For this Home Assistant integration, the RS485 serial Modbus connection must be converted to Modbus TCP/IP.<br>
 This can be done with standard of shelf modbus RTU RS485 to TCP/IP gateways.<br>
 [Waveshare](https://www.waveshare.com) as example, has afordable gateways.<br>
+Please make sure you order the right one that supports Modbus TCP, because not all do!<br>
 It is possible to use a Raspberry Pi 2 or higer as gateway with 
 [this](https://github.com/3cky/mbusd) software.
-
 
 # Installation
 ### HACS Custom Repository
