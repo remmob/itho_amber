@@ -12,30 +12,38 @@ views:
             name: Aanvoertemperatuur koelen zonder koellijn 1
           - entity: switch.amber_heat_curve_zone_1
             name: Stooklijn zone 1
-          - entity: sensor.amber_heatcurve_outside_temperture_1
+          - entity: number.amber_heatcurve_outside_temperture_1
             name: Stooklijn buitentemperatuur 1
-          - entity: sensor.amber_heatcurve_outside_temperture_2
+            icon: mdi:thermometer
+          - entity: number.amber_heatcurve_outside_temperture_2
             name: Stooklijn buitentemperatuur 2
-          - entity: sensor.amber_heatcurve_outside_temperture_3
+            icon: mdi:thermometer
+          - entity: number.amber_heatcurve_outside_temperture_3
             name: Stooklijn buitentemperatuur 3
-          - entity: sensor.amber_heatcurve_outside_temperture_4
+            icon: mdi:thermometer
+          - entity: number.amber_heatcurve_outside_temperture_4
             name: Stooklijn buitentemperatuur 4
-          - entity: sensor.amber_heatcurve_outside_temperture_5
+            icon: mdi:thermometer
+          - entity: number.amber_heatcurve_outside_temperture_5
             name: Stooklijn buitentemperatuur 5
-          - entity: sensor.amber_heatcurve_1_setpoint_1
+            icon: mdi:thermometer
+          - entity: number.amber_heatcurve_1_setpoint_1
             name: Stooklijn zone 1 aanvoertemperatuur 1
-          - entity: sensor.amber_heatcurve_1_setpoint_2
+          - entity: number.amber_heatcurve_1_setpoint_2
             name: Stooklijn zone 1 aanvoertemperatuur 2
-          - entity: sensor.amber_heatcurve_1_setpoint_3
+          - entity: number.amber_heatcurve_1_setpoint_3
             name: Stooklijn zone 1 aanvoertemperatuur 3
-          - entity: sensor.amber_heatcurve_1_setpoint_4
+          - entity: number.amber_heatcurve_1_setpoint_4
             name: Stooklijn zone 1 aanvoertemperatuur 4
-          - entity: sensor.amber_heatcurve_1_setpoint_5
+          - entity: number.amber_heatcurve_1_setpoint_5
             name: Stooklijn zone 1 aanvoertemperatuur 5
-          - entity: sensor.amber_ideal_room_temp_inheating
+          - entity: switch.amber_heat_curve_1_correction
+          - entity: number.amber_ideal_room_temp_inheating
             name: Ruimtetemperatuur Tr correctie stooklijn zone 1
-          - entity: sensor.amber_ideal_room_temp_incooling
+            icon: mdi:thermometer
+          - entity: number.amber_ideal_room_temp_incooling
             name: Ruimtetemperatuur Tr correctie koellijn zone 1
+            icon: mdi:thermometer
           - entity: number.amber_zone_1_heating_setpoint
             name: Aanvoertemperatuur verwarmen zonder stooklijn zone 1
           - entity: number.amber_min_setpoint_setting_zone_1
@@ -44,6 +52,7 @@ views:
             name: Max. Aanvoertemperatuur zone 1
           - entity: sensor.amber_mixing_valve_zone_1
             name: Mengregelafsluiter zone 1
+            icon: mdi:pipe-valve
           - entity: sensor.amber_coolcurve_outside_temperture_1
             name: Koellijn buitentemperatuur 1
           - entity: sensor.amber_coolcurve_outside_temperture_2
@@ -73,15 +82,15 @@ views:
             name: Mengregelafsluiter zone 2
           - entity: switch.amber_heat_curve_zone_2
             name: Stooklijn zone 2
-          - entity: sensor.amber_heatcurve_2_setpoint_1
+          - entity: number.amber_heatcurve_2_setpoint_1
             name: Stooklijn zone 2 aanvoertemperatuur 1
-          - entity: sensor.amber_heatcurve_2_setpoint_2
+          - entity: number.amber_heatcurve_2_setpoint_2
             name: Stooklijn zone 2 aanvoertemperatuur 2
-          - entity: sensor.amber_heatcurve_2_setpoint_3
+          - entity: number.amber_heatcurve_2_setpoint_3
             name: Stooklijn zone 2 aanvoertemperatuur 3
-          - entity: sensor.amber_heatcurve_2_setpoint_4
+          - entity: number.amber_heatcurve_2_setpoint_4
             name: Stooklijn zone 2 aanvoertemperatuur 4
-          - entity: sensor.amber_heatcurve_2_setpoint_5
+          - entity: number.amber_heatcurve_2_setpoint_5
             name: Stooklijn zone 2 aanvoertemperatuur 5
           - entity: number.amber_max_setpoint_setting_zone_2
             name: Max. aanvoertemperatuur zone 2
