@@ -13,8 +13,7 @@ from pymodbus.payload import BinaryPayloadDecoder
 from pymodbus.payload import BinaryPayloadBuilder
 
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from homeassistant.helpers.typing import HomeAssistantType
-from homeassistant.core import CALLBACK_TYPE, callback
+from homeassistant.core import CALLBACK_TYPE, callback, HomeAssistant
 
 from .const import (
     DOMAIN,
@@ -35,7 +34,7 @@ _LOGGER = logging.getLogger(__name__)
 class AmberModbusHub(DataUpdateCoordinator[dict]):
     """Thread safe wrapper class for pymodbus."""
 
-    def __init__(self, hass: HomeAssistantType, name: str, host: str, port: Number, scan_interval: Number):
+    def __init__(self, hass: HomeAssistant, name: str, host: str, port: Number, scan_interval: Number):
         """Initialize the Itho Daalderop Amber 65/95/120 Modbus hub."""
         super().__init__(hass, _LOGGER, name=name, update_interval=timedelta(seconds=scan_interval))
 

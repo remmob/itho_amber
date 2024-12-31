@@ -42,12 +42,6 @@ async def async_setup(_hass: HomeAssistant, _config: Config) -> bool:
     """Set up this integration using YAML is not supported."""
     return True
 
-#async def async_setup(hass, config):
-#    """Set up the Amber modbus component."""
-#    hass.data[DOMAIN] = {}
-#
-#    return True
-
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Set up a Amber mobus integration using UI."""
     hass.data[DOMAIN] = {}
@@ -66,9 +60,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     hass.data[DOMAIN][name] = {"hub": hub}
 
     for component in PLATFORMS:
-        hass.async_create_task(
-            hass.config_entries.async_forward_entry_setup(entry, component)
-        )
+        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
     async def async_unload_entry(hass, entry):

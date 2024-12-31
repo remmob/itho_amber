@@ -1,15 +1,12 @@
 """Platform for switch integration."""
 
 from __future__ import annotations
-#from datetime import datetime
 import asyncio
-#import time
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.components.switch import SwitchEntity
 
 from homeassistant.const import CONF_NAME
 from homeassistant.core import callback
-#from homeassistant.helpers.typing import HomeAssistantType
 import homeassistant.util.dt as dt_util
 
 from .const import (

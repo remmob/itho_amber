@@ -1,12 +1,8 @@
 """Platform for sensor integration."""
 
 from __future__ import annotations
-#from datetime import datetime
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.components.sensor import SensorEntity
-#import logging
-#from typing import Optional
-
 from homeassistant.const import CONF_NAME
 from homeassistant.core import callback
 import homeassistant.util.dt as dt_util
@@ -17,10 +13,6 @@ from .const import (
     SENSOR_TYPES,
     AmberModbusSensorEntityDescription,
 )
-
-#from .hub import AmberModbusHub
-
-#_LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass, entry, async_add_entities):
     hub_name = entry.data[CONF_NAME]

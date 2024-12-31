@@ -17,7 +17,8 @@ doing so can cause damage to your heat pump.
 ### <u>Sensor Updates&nbsp;</u>
 After changing a sensor value, it can take up sometime (poling time) before it updates.
 ### <u>Modbus&nbsp;</u>
-This integration uses the external Modbus connection on the back of the LCD controller.<br>com3, connections 7 (RS485B) & 8 (RS485A). 
+This integration uses the external Modbus connection on the back of the LCD controller.<br>Connections 1 (RS485B) & 2 (RS485A). 
+![Modbus connections](images/Amber%20Modbus%20connection.png)
 ### <u>Hardware&nbsp;</u>
 For this Home Assistant integration, the RS485 serial Modbus connection must be converted to Modbus TCP/IP.<br>
 This can be done with standard of shelf modbus RTU RS485 to TCP/IP gateways.<br>
@@ -75,8 +76,7 @@ After rebooting Home Assistant, this integration can be configured through the i
 
 ## Roadmap
 - Adding error codes
-- Weekly clocks\timers. They can not be written. Timers with automations  
-  in Home Assistant makes much more sense.
+- Adding Modbus RTU support
   
 
 

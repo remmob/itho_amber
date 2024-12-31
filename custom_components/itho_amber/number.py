@@ -1,12 +1,10 @@
 """platform for number integration"""
 
 from __future__ import annotations
-#from datetime import datetime
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.components.number import NumberEntity
 
 from homeassistant.const import CONF_NAME
-#from homeassistant.core import callback
 import homeassistant.util.dt as dt_util
 from pymodbus.constants import Endian
 from pymodbus.payload import BinaryPayloadBuilder
