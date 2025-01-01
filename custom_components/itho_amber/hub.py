@@ -5,7 +5,7 @@ import threading
 from datetime import timedelta
 from voluptuous.validators import Number
 
-from pymodbus.register_read_message import ReadHoldingRegistersResponse
+# from pymodbus.register_read_message import ReadHoldingRegistersResponse
 from pymodbus.client import ModbusTcpClient
 from pymodbus.constants import Endian
 from pymodbus.exceptions import ConnectionException
@@ -62,7 +62,7 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         with self._lock:
             self._client.close()
 
-    def _read_holding_registers(self, unit, address, count) -> ReadHoldingRegistersResponse:
+    def _read_holding_registers(self, unit, address, count) -> None: # ReadHoldingRegistersResponse:
         """Read holding registers."""
         with self._lock:
             return self._client.read_holding_registers(address=address, count=count, slave=unit)  
