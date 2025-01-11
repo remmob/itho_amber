@@ -1,5 +1,4 @@
 ![Version](https://img.shields.io/github/v/release/remmob/itho_amber)
-
 ![Stars](https://img.shields.io/github/stars/remmob/itho_amber)
 
 # Itho Daalderop Amber Heat pump integration
