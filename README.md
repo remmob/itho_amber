@@ -78,7 +78,9 @@ After rebooting Home Assistant, this integration can be configured through the i
     Itho, I have asked them<br> to make all settings writeable... To be continued... 
 
 ## Roadmap
-- Adding error codes
+- Adding sensor max DHW temperture setting.
+- Adding error codes (update expected 31-3-2025).
+- Realtime setpoints heatcurves
 - Adding Modbus RTU support
   
 
