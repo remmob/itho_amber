@@ -97,7 +97,7 @@ def get_key(d, search):
     return None
 
 class AmberSelectControlMode(CoordinatorEntity, SelectEntity):
-    """Representation of a Amber Modbus select."""
+    """Representation of a Amber Modbus select.""" 
 
     def __init__(
         self,
@@ -135,7 +135,9 @@ class AmberSelectControlMode(CoordinatorEntity, SelectEntity):
     def select_option(self, option) -> None:
         address = int(self.entity_description.key)
         new_mode = get_key(self._options, option)
-        self._hub.write_registers(address, payload=new_mode)
+        builder = BinaryPayloadBuilder(byteorder=Endian.BIG)
+        builder.add_16bit_int(int(new_mode))
+        self._hub.write_registers(address, payload=builder.to_registers())
 
 class AmberSelectWorkingMode(CoordinatorEntity, SelectEntity):
     """Representation of a Amber Modbus select."""
@@ -176,7 +178,9 @@ class AmberSelectWorkingMode(CoordinatorEntity, SelectEntity):
     def select_option(self, option) -> None:
         address = int(self.entity_description.key)
         new_mode = get_key(self._options, option)
-        self._hub.write_registers(address, payload=new_mode)
+        builder = BinaryPayloadBuilder(byteorder=Endian.BIG)
+        builder.add_16bit_int(int(new_mode))
+        self._hub.write_registers(address, payload=builder.to_registers())
 
 class AmberSelectHWTBHMode(CoordinatorEntity, SelectEntity):
     """Representation of a Amber Modbus select."""
@@ -217,7 +221,9 @@ class AmberSelectHWTBHMode(CoordinatorEntity, SelectEntity):
     def select_option(self, option) -> None:
         address = int(self.entity_description.key)
         new_mode = get_key(self._options, option)
-        self._hub.write_registers(address, payload=new_mode)
+        builder = BinaryPayloadBuilder(byteorder=Endian.BIG)
+        builder.add_16bit_int(int(new_mode))
+        self._hub.write_registers(address, payload=builder.to_registers())
 
 class AmberSelectP0PumpMode(CoordinatorEntity, SelectEntity):
     """Representation of a Amber Modbus select."""
@@ -258,10 +264,12 @@ class AmberSelectP0PumpMode(CoordinatorEntity, SelectEntity):
     def select_option(self, option) -> None:
         address = int(self.entity_description.key)
         new_mode = get_key(self._options, option)
-        self._hub.write_registers(address, payload=new_mode)
+        builder = BinaryPayloadBuilder(byteorder=Endian.BIG)
+        builder.add_16bit_int(int(new_mode))
+        self._hub.write_registers(address, payload=builder.to_registers())
 
 class AmberSelectP0PumpSpeed(CoordinatorEntity, SelectEntity):
-    """Representation of a Amber Modbus select."""
+    """Representation of a Amber Modbus Pump 0 speed select."""
 
     def __init__(
         self,
@@ -299,4 +307,6 @@ class AmberSelectP0PumpSpeed(CoordinatorEntity, SelectEntity):
     def select_option(self, option) -> None:
         address = int(self.entity_description.key)
         new_mode = get_key(self._options, option)
-        self._hub.write_registers(address, payload=new_mode)
+        builder = BinaryPayloadBuilder(byteorder=Endian.BIG)
+        builder.add_16bit_int(int(new_mode))
+        self._hub.write_registers(address, payload=builder.to_registers())
