@@ -1,8 +1,14 @@
+![Version](https://img.shields.io/github/v/release/remmob/itho_amber 'Release')
+[![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg 'Default Home Assistant community store')](https://github.com/custom-components/hacs)
+![total downloads](https://img.shields.io/github/downloads/remmob/itho_amber/total 'total downloads')
+[![total issues](https://img.shields.io/github/issues/remmob/itho_amber 'total issues the integration')](https://github.com/remmob/itho_amber/issues)
+![Stars](https://img.shields.io/github/stars/remmob/itho_amber)
+
 # Itho Daalderop Amber Heat pump integration
 Home Assistant integration for Itho Daalderop Amber heat pump.<br>
 The Amber heat pump family contains 3 models.
 - 65 (6,5Kw)
-- 95 (9,5K)
+- 95 (9,5Kw)
 - 120 (12Kw)
 
 Although only tested with the Amber 95. It should work fine with the other two models.
@@ -17,18 +23,22 @@ doing so can cause damage to your heat pump.
 ### <u>Sensor Updates&nbsp;</u>
 After changing a sensor value, it can take up sometime (poling time) before it updates.
 ### <u>Modbus&nbsp;</u>
-This integration uses the external Modbus connection on the back of the LCD controller.<br>com3, connections 7 (RS485B) & 8 (RS485A). 
+This integration uses the external Modbus connection on the back of the LCD controller.<br>Connections 1 (RS485B) & 2 (RS485A). 
+![Modbus connections](images/Amber%20Modbus%20connection.png)
 ### <u>Hardware&nbsp;</u>
 For this Home Assistant integration, the RS485 serial Modbus connection must be converted to Modbus TCP/IP.<br>
 This can be done with standard of shelf modbus RTU RS485 to TCP/IP gateways.<br>
 [Waveshare](https://www.waveshare.com) as example, has afordable gateways.<br>
+Please make sure you order the right one that supports Modbus TCP, because not all do!<br>
 It is possible to use a Raspberry Pi 2 or higer as gateway with 
 [this](https://github.com/3cky/mbusd) software.
 
-
 # Installation
-### HACS
-Install with [HACS](http://www.hacs.xyz) Search for Itho Amber in the default repository.
+### HACS Custom Repository
+On the HACS main page, hit the triple dots menu upper right corner.
+click on custom repositories and add https://github.com/remmob/itho_amber as URL
+the category must be integration. Click add to save.
+
 ### Manual 
 Copy the `itho_amber` folder in the `custom_components` folder into your Home Assistant `config/custom_components` folder.<br>
 After rebooting Home Assistant, this integration can be configured through the integration setup UI.
@@ -71,9 +81,7 @@ After rebooting Home Assistant, this integration can be configured through the i
     Itho, I have asked them<br> to make all settings writeable... To be continued... 
 
 ## Roadmap
-- Adding error codes
-- Weekly clocks\timers. They can not be written. Timers with automations  
-  in Home Assistant makes much more sense.
-  
-
-
+- Adding sensor max DHW temperture setting.
+- Adding error codes (update expected 31-3-2025).
+- Realtime setpoints heatcurves
+- Adding Modbus RTU support

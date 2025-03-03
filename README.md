@@ -5,7 +5,7 @@
 ![Stars](https://img.shields.io/github/stars/remmob/itho_amber)
 
 # Itho Daalderop Amber Heat pump integration
-Home Assistant integration for Itho Daalderop Amber heat pump.<br>
+Home Assistant integration for Itho Daalderop Amber heat pump.<br> 
 The Amber heat pump family contains 3 models.
 - 65 (6,5Kw)
 - 95 (9,5Kw)
