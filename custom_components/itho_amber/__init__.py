@@ -43,7 +43,7 @@ async def async_setup(_hass: HomeAssistant, _config: Config) -> bool:
     return True
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
-    """Set up a Amber mobus integration using UI."""
+    """Set up a Amber modbus integration using UI."""
     hass.data[DOMAIN] = {}
 
     host = entry.data[CONF_HOST]
@@ -63,18 +63,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
-    async def async_unload_entry(hass, entry):
-        """Unload Amber mobus entry."""
-        unload_ok = all(
-            await asyncio.gather(
-                *[
-                    hass.config_entries.async_forward_entry_unload(entry, component)
-                    for component in PLATFORMS
-                ]
-            )
+async def async_unload_entry(hass, entry):
+    """Unload Amber mobus entry."""
+    unload_ok = all(
+        await asyncio.gather(
+            *[
+                hass.config_entries.async_forward_entry_unload(entry, component)
+                for component in PLATFORMS
+            ]
         )
-        if not unload_ok:
-            return False
+    )
+    if not unload_ok:
+        return False
 
-        hass.data[DOMAIN].pop(entry.data["name"])
-        return True
+    hass.data[DOMAIN].pop(entry.data["name"])
+    return True

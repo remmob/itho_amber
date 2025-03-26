@@ -2,6 +2,7 @@
 
 import logging
 import threading
+
 from datetime import timedelta
 from voluptuous.validators import Number
 
@@ -24,6 +25,8 @@ from .const import (
     MODE_SIGNAL_TYPE,
     MODE_SIGNAL_OUTPUT,
     DISPLAY_TIME,
+    FAILURE_STATUS,
+    ACTIVE_STATUS,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -44,6 +47,7 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         self.setting_data_5: dict = {}
         self.setting_data_6: dict = {}
         self.realtime_data: dict = {}
+        self.setpoint_data = {}
         
     @callback
     def async_remove_listener(self, update_callback: CALLBACK_TYPE) -> None:
@@ -73,8 +77,8 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         setting_data_5 = {}
         setting_data_6 = {}
         realtime_data = {}
-        
- 
+        setpoint_data = {}
+         
         try:
             """Read settings data 1"""
             setting_data_1 = await self.hass.async_add_executor_job(
@@ -103,11 +107,15 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
             """Read realtime data"""
             realtime_data = await self.hass.async_add_executor_job(
                 self.read_modbus_realtime_data)
+            
+            """Read setpoint data"""
+            setpoint_data = await self.hass.async_add_executor_job(
+                self.read_modbus_setpoint_data)
 
         except ConnectionException:
             _LOGGER.error("Reading realtime data failed! the Itho Daalderop Amber 65/95/120 is unreachable.")
 
-        return {**setting_data_1, **setting_data_2, **setting_data_3, **setting_data_4, **setting_data_5, **setting_data_6, **realtime_data}
+        return {**setting_data_1, **setting_data_2, **setting_data_3, **setting_data_4, **setting_data_5, **setting_data_6, **realtime_data, **setpoint_data}
 
     def read_modbus_setting_data_1(self) -> dict: #0 t/m 119
         """Read settings data 1"""
@@ -124,31 +132,23 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         S6 = newdecoder[6]; data["6"] = S6; S7 = newdecoder[7]; data["7"] = S7; S8 = newdecoder[8]; data["8"] = S8
         
         S9 = newdecoder[9]; 
-        if S9 in ON_OFF_STATUS:
-            data ["9"] = ON_OFF_STATUS[S9] 
+        if S9 in ON_OFF_STATUS: data ["9"] = ON_OFF_STATUS[S9] 
     
-        S10 = newdecoder[10]; data["10"] = S10; S11 = newdecoder[11]; data["11"] = S11; S12 = newdecoder[12]; data["12"] = S12
-        S13 = newdecoder[13]; data["13"] = S13; S14 = newdecoder[14]; data["14"] = S14; S15 = newdecoder[15]; data["15"] = S15
-        S16 = newdecoder[16]; data["16"] = S16; S17 = newdecoder[17]; data["17"] = S17
+        S10 = newdecoder[10]; data["10"] = S10
+        S11 = newdecoder[11]; data["11"] = S11 
+        S12 = newdecoder[12]; data["12"] = S12
+        S13 = newdecoder[13]; data["13"] = S13 
+        S14 = newdecoder[14]; data["14"] = S14 
+        S15 = newdecoder[15]; data["15"] = S15
+        S16 = newdecoder[16]; data["16"] = S16 
+        S17 = newdecoder[17]; data["17"] = S17
         
         S18 = newdecoder[18]; 
-        if S18 in ON_OFF_STATUS:
-            data ["18"] = ON_OFF_STATUS[S18]  
+        if S18 in ON_OFF_STATUS: data ["18"] = ON_OFF_STATUS[S18]  
         
-        S19 = newdecoder[19]
-        data["19"] = S19 
-        S20 = newdecoder[20]
-        data["20"] = S20
-        S21 = newdecoder[21]
-        data["21"] = S21
-        S22 = newdecoder[22]
-        data["22"] = S22
-        S23 = newdecoder[23]
-        data["23"] = S23
-        S24 = newdecoder[24]
-        data["24"] = S24
-        S25 = newdecoder[25]
-        data["25"] = S25
+        S19 = newdecoder[19]; data["19"] = S19; S20 = newdecoder[20]; data["20"] = S20; S21 = newdecoder[21]; data["21"] = S21
+        S22 = newdecoder[22]; data["22"] = S22; S23 = newdecoder[23]; data["23"] = S23; S24 = newdecoder[24]; data["24"] = S24
+        S25 = newdecoder[25]; data["25"] = S25
 
         S26 = newdecoder[26]; data["26"] = S26; S27 = newdecoder[27]; data["27"] = S27; S28 = newdecoder[28]; data["28"] = S28
         S29 = newdecoder[29]; data["29"] = S29; S30 = newdecoder[30]; data["30"] = bool(S30)
@@ -166,94 +166,40 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         S64 = newdecoder[64]; data["64"] = S64; S65 = newdecoder[65]; data["65"] = S65
 
         S66 = newdecoder[66]; 
-        if S66 in ON_OFF_STATUS:
-            data ["66"] = ON_OFF_STATUS[S66] 
+        if S66 in ON_OFF_STATUS: data ["66"] = ON_OFF_STATUS[S66] 
 
-        S67 = newdecoder[67]; data["67"] = S67; S68 = newdecoder[68]; data["68"] = S68; S69 = newdecoder[69]; data["69"] = S69
-        S70 = newdecoder[70]; data["70"] = S70
+        S67 = newdecoder[67]; data["67"] = S67; S68 = newdecoder[68]; data["68"] = S68 
+        S69 = newdecoder[69]; data["69"] = S69; S70 = newdecoder[70]; data["70"] = S70
 
         S71 = newdecoder[71]; 
-        if S71 in ON_OFF_STATUS:
-            data ["71"] = ON_OFF_STATUS[S71] 
+        if S71 in ON_OFF_STATUS: data ["71"] = ON_OFF_STATUS[S71] 
 
         S72 = newdecoder[72]; data["72"] = S72; 
         
         S73 = newdecoder[73]; 
-        if S73 in ON_OFF_STATUS:
-            data ["73"] = ON_OFF_STATUS[S73] 
+        if S73 in ON_OFF_STATUS: data ["73"] = ON_OFF_STATUS[S73] 
 
         S74 = newdecoder[74]; data["74"] = S74; S75 = newdecoder[75]; data["75"] = S75
 
-        S76= newdecoder[76]
-        data["76"] = S76
-        S77= newdecoder[77]
-        data["77"] = S77
-        S78= newdecoder[78]
-        data["78"] = S78
-        S79= newdecoder[79]
-        data["79"] = S79
-        S80= newdecoder[80]
-        data["80"] = S80
-        S81= newdecoder[81]
-        data["81"] = S81
-        S82= newdecoder[82]
-        data["82"] = S82
-        S83= newdecoder[83]
-        data["83"] = S83
-        S84= newdecoder[84]
-        data["84"] = S84
-        S85= newdecoder[85]
-        data["85"] = S85
-        S86= newdecoder[86]
-        data["86"] = S86
-        S87= newdecoder[87]
-        data["87"] = S87
-        S88= newdecoder[88]
-        data["88"] = S88
-        S89= newdecoder[89]
-        data["89"] = S89
+        S76= newdecoder[76]; data["76"] = S76; S77 = newdecoder[77]; data["77"] = S77; S78 = newdecoder[78]; data["78"] = S78
+        S79= newdecoder[79]; data["79"] = S79; S80 = newdecoder[80]; data["80"] = S80; S81 = newdecoder[81]; data["81"] = S81
+        S82= newdecoder[82]; data["82"] = S82; S83 = newdecoder[83]; data["83"] = S83; S84 = newdecoder[84]; data["84"] = S84
+        S85= newdecoder[85]; data["85"] = S85; S86 = newdecoder[86]; data["86"] = S86; S87 = newdecoder[87]; data["87"] = S87
+        S88= newdecoder[88]; data["88"] = S88; S89 = newdecoder[89]; data["89"] = S89
 
         S90 = newdecoder[90]; data["90"] = bool(S90); S91 = newdecoder[91]; data["91"] = S91; S92 = newdecoder[92]; data["92"] = S92
         S93 = newdecoder[93]; data["93"] = S93; S94 = newdecoder[94]; data["94"] = S94; S95 = newdecoder[95]; data["95"] = S95
         S96 = newdecoder[96]; data["96"] = S96; S97 = newdecoder[97]; data["97"] = S97; S98 = newdecoder[98]; data["98"] = S98
         S99 = newdecoder[99]; data["99"] = S99; S100 = newdecoder[100]; data["100"] = S100; S101 = newdecoder[101]; data["101"] = S101
-        S102 = newdecoder[102]; data["102"] = S102
-
-        S103= newdecoder[103]
-        data["103"] = S103
-        S104= newdecoder[104]
-        data["104"] = S104
-        S105= newdecoder[105]
-        data["105"] = S105
-        S106= newdecoder[106]
-        data["106"] = S106
-        S107= newdecoder[107]
-        data["107"] = S107
-        S108= newdecoder[108]
-        data["108"] = S108
-        S109= newdecoder[109]
-        data["109"] = S109
-        
-        S110 = newdecoder[110]; data["110"] = S110; S111 = newdecoder[111]; data["111"] = S111
-
-        S112= newdecoder[112]
-        data["112"] = S112
-        S113= newdecoder[113]
-        data["113"] = S113
-        S114= newdecoder[114]
-        data["114"] = S114
-        S115= newdecoder[115]
-        data["115"] = S115
-        S116= newdecoder[116]
-        data["116"] = S116
-        S117= newdecoder[117]
-        data["117"] = S117
-        S118= newdecoder[118]
-        data["118"] = S118
+        S102 = newdecoder[102]; data["102"] = S102; S103 = newdecoder[103]; data["103"] = S103; S104 = newdecoder[104]; data["104"] = S104
+        S105 = newdecoder[105]; data["105"] = S105; S106 = newdecoder[106]; data["106"] = S106; S107 = newdecoder[107]; data["107"] = S107
+        S108 = newdecoder[108]; data["108"] = S108; S109 = newdecoder[109]; data["109"] = S109; S110 = newdecoder[110]; data["110"] = S110 
+        S111 = newdecoder[111]; data["111"] = S111; S112 = newdecoder[112]; data["112"] = S112; S113 = newdecoder[113]; data["113"] = S113
+        S114 = newdecoder[114]; data["114"] = S114; S115 = newdecoder[115]; data["115"] = S115; S116 = newdecoder[116]; data["116"] = S116
+        S117 = newdecoder[117]; data["117"] = S117; S118 = newdecoder[118]; data["118"] = S118
         
         S119 = newdecoder[119]; 
-        if S119 in MODE_SIGNAL_TYPE:
-            data ["119"] = MODE_SIGNAL_TYPE[S119]
+        if S119 in MODE_SIGNAL_TYPE: data ["119"] = MODE_SIGNAL_TYPE[S119]
 
         return data
 
@@ -268,22 +214,18 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         newdecoder = ModbusTcpClient.convert_from_registers(setting_data_2.registers, data_type=ModbusTcpClient.DATATYPE.INT16)
 
         S120 = newdecoder[0] 
-        if S120 in ON_OFF_STATUS:
-            data ["120"] = ON_OFF_STATUS[S120]
+        if S120 in ON_OFF_STATUS: data ["120"] = ON_OFF_STATUS[S120]
 
         S121 = newdecoder[1] 
-        if S121 in ON_OFF_STATUS:
-            data ["121"] = ON_OFF_STATUS[S121]
+        if S121 in ON_OFF_STATUS: data ["121"] = ON_OFF_STATUS[S121]
 
         S122 = newdecoder[2]
-        if S122 in ON_OFF_STATUS:
-            data ["122"] = ON_OFF_STATUS[S122]
+        if S122 in ON_OFF_STATUS: data ["122"] = ON_OFF_STATUS[S122]
 
         S123 = newdecoder[3]; data["123"] = S123; S124 = newdecoder[4]; data["124"] = S124; S125 = newdecoder[5]; data["125"] = S125
         
         S126 = newdecoder[6]
-        if S126 in DISPLAY_TIME:
-            data["126"] = DISPLAY_TIME[S126] 
+        if S126 in DISPLAY_TIME: data["126"] = DISPLAY_TIME[S126] 
         
         S127 = newdecoder[7]; data["127"] = S127; S128 = newdecoder[8]; data["128"] = S128; S129 = newdecoder[9]; data["129"] = S129
         S130 = newdecoder[10]; data["130"] = S130; S131 = newdecoder[11]; data["131"] = S131; S132 = newdecoder[12]; data["132"] = S132
@@ -291,43 +233,34 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         S136 = newdecoder[16]; data["136"] = S136
        
         S137 = newdecoder[17]
-        if S137 in PUMP_TYPE:
-            data ["137"] = PUMP_TYPE[S137]
+        if S137 in PUMP_TYPE: data ["137"] = PUMP_TYPE[S137]
 
         S138 = newdecoder[18]; data["138"] = S138; S139 = newdecoder[19]; data["139"] = S139; S140 = newdecoder[20]; data["140"] = S140
         S141 = newdecoder[21]; data["141"] = S141; S142 = newdecoder[22]; data["142"] = S142
 
         S143 = newdecoder[23]
-        if S143 in ON_OFF_STATUS:
-            data ["143"] = ON_OFF_STATUS[S143]
+        if S143 in ON_OFF_STATUS: data ["143"] = ON_OFF_STATUS[S143]
        
         S144 = newdecoder[24]
-        if S144 in ON_OFF_STATUS:
-            data ["144"] = ON_OFF_STATUS[S144]
+        if S144 in ON_OFF_STATUS: data ["144"] = ON_OFF_STATUS[S144]
 
         S145 = newdecoder[25]
-        if S145 in ON_OFF_STATUS:
-            data ["145"] = ON_OFF_STATUS[S145]
+        if S145 in ON_OFF_STATUS: data ["145"] = ON_OFF_STATUS[S145]
 
         S146 = newdecoder[26]
-        if S146 in ON_OFF_STATUS:
-            data ["146"] = ON_OFF_STATUS[S146]
+        if S146 in ON_OFF_STATUS: data ["146"] = ON_OFF_STATUS[S146]
 
         S147 = newdecoder[27]
-        if S147 in ON_OFF_STATUS:
-            data ["147"] = ON_OFF_STATUS[S147]
+        if S147 in ON_OFF_STATUS: data ["147"] = ON_OFF_STATUS[S147]
 
         S148 = newdecoder[28]
-        if S148 in ON_OFF_STATUS:
-            data ["148"] = ON_OFF_STATUS[S148]
+        if S148 in ON_OFF_STATUS: data ["148"] = ON_OFF_STATUS[S148]
 
         S149 = newdecoder[29]
-        if S149 in ON_OFF_STATUS:
-            data ["149"] = ON_OFF_STATUS[S149]
+        if S149 in ON_OFF_STATUS: data ["149"] = ON_OFF_STATUS[S149]
 
         S150 = newdecoder[30]
-        if S150 in ON_OFF_STATUS:
-            data ["150"] = ON_OFF_STATUS[S150]
+        if S150 in ON_OFF_STATUS: data ["150"] = ON_OFF_STATUS[S150]
 
         S151 = newdecoder[31]; data["151"] = S151; S152 = newdecoder[32]; data["152"] = S152; S153 = newdecoder[33]; data["153"] = S153
         S154 = newdecoder[34]; data["154"] = S154; S155 = newdecoder[35]; data["155"] = S155; S156 = newdecoder[36]; data["156"] = S156
@@ -348,12 +281,10 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         S199 = newdecoder[79]; data["199"] = S199; S200 = newdecoder[80]; data["200"] = S200; S201 = newdecoder[81]; data["201"] = S201
 
         S202 = newdecoder[82]
-        if S202 in MODE_SIGNAL_OUTPUT:
-            data ["202"] = MODE_SIGNAL_OUTPUT[S202]
+        if S202 in MODE_SIGNAL_OUTPUT: data ["202"] = MODE_SIGNAL_OUTPUT[S202]
 
         S203 = newdecoder[83]
-        if S203 in MODE_SIGNAL_TYPE:
-            data ["203"] = MODE_SIGNAL_TYPE[S203]
+        if S203 in MODE_SIGNAL_TYPE: data ["203"] = MODE_SIGNAL_TYPE[S203]
 
         S204 = newdecoder[84]; data["204"] = S204; S205 = newdecoder[85]; data["205"] = S205; S206 = newdecoder[86]; data["206"] = S206
         S207 = newdecoder[87]; data["207"] = S207; S208 = newdecoder[88]; data["208"] = S208; S209 = newdecoder[89]; data["209"] = S209
@@ -393,9 +324,9 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
 
         return data
 
-    def read_modbus_setting_data_4(self) -> dict: #399 & 340
+    def read_modbus_setting_data_4(self) -> dict: #334 & 340
         """Read settings data 4"""
-        setting_data_4 = self._read_holding_registers(unit=1, address=339, count=2)
+        setting_data_4 = self._read_holding_registers(unit=1, address=334, count=7)
         
         if setting_data_4.isError():
             return {}
@@ -403,11 +334,13 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         data = {}
         newdecoder = ModbusTcpClient.convert_from_registers(setting_data_4.registers, data_type=ModbusTcpClient.DATATYPE.INT16)
 
-        S339 = newdecoder[0]
-        if S339 in ON_OFF_STATUS:
-            data ["339"] = ON_OFF_STATUS[S339]
-
-        S340 = newdecoder[1]; data["340"] = S340
+        S334 = newdecoder[0]; data["334"] = S334; S335 = newdecoder[1]; data["335"] = S335; S336 = newdecoder[2]; data["336"] = S336
+        S337 = newdecoder[3]; data["337"] = S337; S338 = newdecoder[4]; data["338"] = S338 
+        
+        S339 = newdecoder[5]
+        if S339 in ON_OFF_STATUS: data ["339"] = ON_OFF_STATUS[S339]
+        
+        S340 = newdecoder[6]; data["340"] = S340
 
         return data
 
@@ -435,65 +368,30 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         data = {}
         newdecoder = ModbusTcpClient.convert_from_registers(setting_data_6.registers, data_type=ModbusTcpClient.DATATYPE.INT16)
 
-        S407 = newdecoder[0]; data["407"] = S407
-        S408 = newdecoder[1]; data["408"] = S408
-        S409 = newdecoder[2]; data["409"] = S409
-        S410 = newdecoder[3]; data["410"] = S410
-        S411 = newdecoder[4]; data["411"] = S411
-        S412 = newdecoder[5]; data["412"] = S412
-        S413 = newdecoder[6]; data["413"] = S413
-        S414 = newdecoder[7]; data["414"] = S414
-        S415 = newdecoder[8]; data["415"] = S415
-        S416 = newdecoder[9]; data["416"] = S416
-        S417 = newdecoder[10]; data["417"] = S417
-        S418 = newdecoder[11]; data["418"] = S418
-        S419 = newdecoder[12]; data["419"] = S419
-        S420 = newdecoder[13]; data["420"] = S420
-        S421 = newdecoder[14]; data["421"] = S421
-        S422 = newdecoder[15]; data["422"] = S422
-        S423 = newdecoder[16]; data["423"] = S423
-        S424 = newdecoder[17]; data["424"] = S424
-        S425 = newdecoder[18]; data["425"] = S425
-        S426 = newdecoder[19]; data["426"] = S426
-        S427 = newdecoder[20]; data["427"] = S427
-        S428 = newdecoder[21]; data["428"] = S428
-        S429 = newdecoder[22]; data["429"] = S429
-        S430 = newdecoder[23]; data["430"] = S430
-        S431 = newdecoder[24]; data["431"] = S431
-        S432 = newdecoder[25]; data["432"] = S432
-        S433 = newdecoder[26]; data["433"] = S433
-        S434 = newdecoder[27]; data["434"] = S434
-        S435 = newdecoder[28]; data["435"] = S435
-        S436 = newdecoder[29]; data["436"] = S436
-        S437 = newdecoder[30]; data["437"] = S437
-        S438 = newdecoder[31]; data["438"] = S438
-        S439 = newdecoder[32]; data["439"] = S439
-        S440 = newdecoder[33]; data["440"] = S440
-        S441 = newdecoder[34]; data["441"] = S441
-        S442 = newdecoder[35]; data["442"] = S442
-        S443 = newdecoder[36]; data["443"] = S443
-        S444 = newdecoder[37]; data["444"] = S444
-        S445 = newdecoder[38]; data["445"] = S445
-        S446 = newdecoder[39]; data["446"] = S446
-        S447 = newdecoder[40]; data["447"] = S447
-        S448 = newdecoder[41]; data["448"] = S448
-        S449 = newdecoder[42]; data["449"] = S449
-        S450 = newdecoder[43]; data["450"] = S450
-        S451 = newdecoder[44]; data["450"] = S451
-        S452 = newdecoder[45]; data["452"] = S452
-        S453 = newdecoder[46]; data["453"] = S453
-        S454 = newdecoder[47]; data["454"] = S454
-        S455 = newdecoder[48]; data["455"] = S455
-        S456 = newdecoder[49]; data["456"] = S456
-        S457 = newdecoder[50]; data["457"] = S457
-        S458 = newdecoder[51]; data["458"] = S458
-        S459 = newdecoder[52]; data["459"] = S459
+        S407 = newdecoder[0]; data["407"] = S407; S408 = newdecoder[1]; data["408"] = S408; S409 = newdecoder[2]; data["409"] = S409
+        S410 = newdecoder[3]; data["410"] = S410; S411 = newdecoder[4]; data["411"] = S411; S412 = newdecoder[5]; data["412"] = S412
+        S413 = newdecoder[6]; data["413"] = S413; S414 = newdecoder[7]; data["414"] = S414; S415 = newdecoder[8]; data["415"] = S415
+        S416 = newdecoder[9]; data["416"] = S416; S417 = newdecoder[10]; data["417"] = S417; S418 = newdecoder[11]; data["418"] = S418
+        S419 = newdecoder[12]; data["419"] = S419; S420 = newdecoder[13]; data["420"] = S420; S421 = newdecoder[14]; data["421"] = S421
+        S422 = newdecoder[15]; data["422"] = S422; S423 = newdecoder[16]; data["423"] = S423; S424 = newdecoder[17]; data["424"] = S424
+        S425 = newdecoder[18]; data["425"] = S425; S426 = newdecoder[19]; data["426"] = S426; S427 = newdecoder[20]; data["427"] = S427
+        S428 = newdecoder[21]; data["428"] = S428; S429 = newdecoder[22]; data["429"] = S429; S430 = newdecoder[23]; data["430"] = S430
+        S431 = newdecoder[24]; data["431"] = S431; S432 = newdecoder[25]; data["432"] = S432; S433 = newdecoder[26]; data["433"] = S433
+        S434 = newdecoder[27]; data["434"] = S434; S435 = newdecoder[28]; data["435"] = S435; S436 = newdecoder[29]; data["436"] = S436
+        S437 = newdecoder[30]; data["437"] = S437; S438 = newdecoder[31]; data["438"] = S438; S439 = newdecoder[32]; data["439"] = S439
+        S440 = newdecoder[33]; data["440"] = S440; S441 = newdecoder[34]; data["441"] = S441; S442 = newdecoder[35]; data["442"] = S442
+        S443 = newdecoder[36]; data["443"] = S443; S444 = newdecoder[37]; data["444"] = S444; S445 = newdecoder[38]; data["445"] = S445
+        S446 = newdecoder[39]; data["446"] = S446; S447 = newdecoder[40]; data["447"] = S447; S448 = newdecoder[41]; data["448"] = S448
+        S449 = newdecoder[42]; data["449"] = S449; S450 = newdecoder[43]; data["450"] = S450; S451 = newdecoder[44]; data["450"] = S451
+        S452 = newdecoder[45]; data["452"] = S452; S453 = newdecoder[46]; data["453"] = S453; S454 = newdecoder[47]; data["454"] = S454
+        S455 = newdecoder[48]; data["455"] = S455; S456 = newdecoder[49]; data["456"] = S456; S457 = newdecoder[50]; data["457"] = S457
+        S458 = newdecoder[51]; data["458"] = S458; S459 = newdecoder[52]; data["459"] = S459
 
         return data
 
     def read_modbus_realtime_data(self) -> dict: # 499 t/m 539
         """Read the reatime sensor values"""
-        realtime_data = self._read_holding_registers(unit=1, address=499, count=41)
+        realtime_data = self._read_holding_registers(unit=1, address=499, count=48)
 
         if realtime_data.isError():
             return {}
@@ -507,13 +405,14 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         data["499"] = ", ".join(_mode).strip()[0:254]
 
         S500 = newdecoder[1]
-        if S500 in LOGIN_STATUS:
-            data["500"] = LOGIN_STATUS[S500]
+        if S500 in LOGIN_STATUS: data["500"] = LOGIN_STATUS[S500]
 
-        S501 = newdecoder[2]; data["501"] = round(S501 * 0.01,2)
-        S502 = newdecoder[3]; data["502"] = S502
-        S503 = newdecoder[4]; data["503"] = round(S503 * 0.01, 2)
-        S504 = newdecoder[5]; data["504"] = round(S504 * 0.01, 2)
+        S501 = newdecoder[2]
+        S502 = newdecoder[3]
+        versionleft = str(round(S501 * 0.01, 2)); data["501"] = "V" + versionleft + "-T" + str(S502)
+
+        S503 = newdecoder[4]; data["503"] = "V" + str(round(S503 * 0.01, 2))
+        S504 = newdecoder[5]; data["504"] = "V" + str(round(S504 * 0.01, 2))
         S505 = newdecoder[6]; data["505"] = round(S505 * 0.1, 2)
         S506 = newdecoder[7]; data["506"] = round(S506 * 0.1, 2)
         S507 = newdecoder[8]; data["507"] = round(S507 * 0.1, 2)
@@ -523,10 +422,9 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         S511 = newdecoder[12]; data["511"] = round(S511 * 0.1, 2)
         S512 = newdecoder[13]; data["512"] = S512
         S513 = newdecoder[14]; data["513"] = S513
-
+ 
         S514 = newdecoder[15]
-        if S514 in CURRENT_OPERATION_MODE:
-            data["514"] = CURRENT_OPERATION_MODE[S514]
+        if S514 in CURRENT_OPERATION_MODE: data["514"] = CURRENT_OPERATION_MODE[S514]
 
         S515 = newdecoder[16]; data["515"] = S515
         S516 = newdecoder[17]; data["516"] = S516
@@ -545,49 +443,196 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         S529 = newdecoder[30]; data["529"] = S529
 
         S530 = newdecoder[31]
-        if S530 in ON_OFF_STATUS:
-            data["530"] = ON_OFF_STATUS[S530]
+        if S530 in ON_OFF_STATUS: data["530"] = ON_OFF_STATUS[S530]
 
         S531 = newdecoder[32]; data["531"] = round(S531 * 0.1, 2)
 
         S532 = newdecoder[33]
-        if S532 in ON_OFF_STATUS:
-            data["532"] = ON_OFF_STATUS[S532]
+        if S532 in ON_OFF_STATUS: data["532"] = ON_OFF_STATUS[S532]
 
         S533 = newdecoder[34]
-        if S533 in ON_OFF_STATUS:
-            data["533"] = ON_OFF_STATUS[S533]
+        if S533 in ON_OFF_STATUS: data["533"] = ON_OFF_STATUS[S533]
 
         S534 = newdecoder[35]
-        if S534 in ON_OFF_STATUS:
-            data["534"] = ON_OFF_STATUS[S534]
+        if S534 in ON_OFF_STATUS: data["534"] = ON_OFF_STATUS[S534]
         
         S535 = newdecoder[36]
-        if S535 in ON_OFF_STATUS:
-            data["535"] = ON_OFF_STATUS[S535]
+        if S535 in ON_OFF_STATUS: data["535"] = ON_OFF_STATUS[S535]
 
         S536 = newdecoder[37]
-        if S536 in ON_OFF_STATUS:
-            data["536"] = ON_OFF_STATUS[S536]
+        if S536 in ON_OFF_STATUS: data["536"] = ON_OFF_STATUS[S536]
 
         S537 = newdecoder[38]; data["537"] = round(S537 * 0.1)
         S538 = newdecoder[39]; data["538"] = round(S538 * 0.1, 2)
         S539 = newdecoder[40]; data["539"] = round(S539 * 0.1, 2)
+        
+        #P failure codes
+        P01 = (newdecoder[41] >> 0) & 1
+        if P01 in FAILURE_STATUS: data["P01"] = FAILURE_STATUS[P01]
+        P02 = (newdecoder[41] >> 1) & 1
+        if P02 in FAILURE_STATUS: data["P02"] = FAILURE_STATUS[P02]
+        P03 = (newdecoder[41] >> 2) & 1
+        if P03 in FAILURE_STATUS: data["P03"] = FAILURE_STATUS[P03]
+        P04 = (newdecoder[41] >> 3) & 1
+        if P04 in ACTIVE_STATUS: data["P04"] = ACTIVE_STATUS[P04]
+        P05 = (newdecoder[41] >> 4) & 1
+        if P05 in FAILURE_STATUS: data["P05"] = FAILURE_STATUS[P05]
+        P06 = (newdecoder[41] >> 5) & 1
+        if P06 in FAILURE_STATUS: data["P06"] = FAILURE_STATUS[P06]
+        P07 = (newdecoder[41] >> 6) & 1
+        if P07 in ACTIVE_STATUS: data["P07"] = ACTIVE_STATUS[P07]
+        P08 = (newdecoder[41] >> 7) & 1
+        if P08 in FAILURE_STATUS: data["P08"] = FAILURE_STATUS[P08]
+        P09 = (newdecoder[41] >> 8) & 1
+        if P09 in FAILURE_STATUS: data["P09"] = FAILURE_STATUS[P09]
+        P10 = (newdecoder[41] >> 9) & 1
+        if P10 in FAILURE_STATUS: data["P10"] = FAILURE_STATUS[P10]
+        P11 = (newdecoder[41] >> 10) & 1
+        if P11 in FAILURE_STATUS: data["P11"] = FAILURE_STATUS[P11]
+        P12 = (newdecoder[41] >> 11) & 1
+        if P12 in ACTIVE_STATUS: data["P12"] = ACTIVE_STATUS[P12]
+        P13 = (newdecoder[41] >> 12) & 1
+        if P13 in FAILURE_STATUS: data["P13"] = FAILURE_STATUS[P13]
+
+        #F failure codes
+        F01 = (newdecoder[42] >> 5) & 1
+        if F01 in FAILURE_STATUS: data["F01"] = FAILURE_STATUS[F01]
+        F02 = (newdecoder[42] >> 6) & 1
+        if F02 in FAILURE_STATUS: data["F02"] = FAILURE_STATUS[F02]
+        F03 = (newdecoder[42] >> 7) & 1
+        if F03 in FAILURE_STATUS: data["F03"] = FAILURE_STATUS[F03]
+        F04 = (newdecoder[42] >> 8) & 1
+        if F04 in FAILURE_STATUS: data["F04"] = FAILURE_STATUS[F04]
+        F05 = (newdecoder[42] >> 9) & 1
+        if F05 in FAILURE_STATUS: data["F05"] = FAILURE_STATUS[F05]
+        F06 = (newdecoder[42] >> 10) & 1
+        if F06 in FAILURE_STATUS: data["F06"] = FAILURE_STATUS[F06]
+        F07 = (newdecoder[42] >> 11) & 1
+        if F07 in FAILURE_STATUS: data["F07"] = FAILURE_STATUS[F07]
+        F09 = (newdecoder[42] >> 13) & 1
+        if F09 in FAILURE_STATUS: data["F09"] = FAILURE_STATUS[F09]
+        F10 = (newdecoder[42] >> 14) & 1
+        if F10 in FAILURE_STATUS: data["F10"] = FAILURE_STATUS[F10]
+        F11 = (newdecoder[42] >> 15) & 1
+        if F11 in FAILURE_STATUS: data["F11"] = FAILURE_STATUS[F11]
+        F12 = (newdecoder[43] >> 0) & 1
+        if F12 in FAILURE_STATUS: data["F12"] = FAILURE_STATUS[F12]
+        F13 = (newdecoder[43] >> 1) & 1 
+        if F13 in FAILURE_STATUS: data["F13"] = FAILURE_STATUS[F13]
+        F14 = (newdecoder[43] >> 2) & 1 
+        if F14 in FAILURE_STATUS: data["F14"] = FAILURE_STATUS[F14]
+        F15 = (newdecoder[43] >> 3) & 1
+        if F15 in FAILURE_STATUS: data["F15"] = FAILURE_STATUS[F15]
+        F16 = (newdecoder[43] >> 4) & 1
+        if F16 in FAILURE_STATUS: data["F16"] = FAILURE_STATUS[F16]
+        F17 = (newdecoder[43] >> 5) & 1
+        if F17 in FAILURE_STATUS: data["F17"] = FAILURE_STATUS[F17]
+        F18 = (newdecoder[43] >> 6) & 1
+        if F18 in FAILURE_STATUS: data["F18"] = FAILURE_STATUS[F18]
+        F21 = (newdecoder[43] >> 7) & 1
+        if F21 in FAILURE_STATUS: data["F21"] = FAILURE_STATUS[F21]
+        F22 = (newdecoder[43] >> 8) & 1
+        if F22 in FAILURE_STATUS: data["F22"] = FAILURE_STATUS[F22]
+        F25 = (newdecoder[43] >> 9) & 1
+        if F25 in FAILURE_STATUS: data["F25"] = FAILURE_STATUS[F25]
+        F27 = (newdecoder[43] >> 10) & 1
+        if F27 in FAILURE_STATUS: data["F27"] = FAILURE_STATUS[F27]
+        F28 = (newdecoder[43] >> 11) & 1
+        if F28 in FAILURE_STATUS: data["F28"] = FAILURE_STATUS[F28]
+        F29 = (newdecoder[43] >> 12) & 1
+        if F29 in FAILURE_STATUS: data["F29"] = FAILURE_STATUS[F29]
+        F30 = (newdecoder[43] >> 13) & 1
+        if F30 in FAILURE_STATUS: data["F30"] = FAILURE_STATUS[F30]
+
+        #E failure codes
+        E01 = (newdecoder[41] >> 13) & 1
+        if E01 in FAILURE_STATUS: data["E01"] = FAILURE_STATUS[E01]
+        E02 = (newdecoder[41] >> 14) & 1
+        if E02 in FAILURE_STATUS: data["E02"] = FAILURE_STATUS[E02]
+        E03 = (newdecoder[41] >> 15) & 1
+        if E03 in FAILURE_STATUS: data["E03"] = FAILURE_STATUS[E03]
+        E04 = (newdecoder[42] >> 0) & 1
+        if E04 in FAILURE_STATUS: data["E04"] = FAILURE_STATUS[E04]
+        E05 = (newdecoder[42] >> 1) & 1
+        if E05 in FAILURE_STATUS: data["E05"] = FAILURE_STATUS[E05]
+        E06 = (newdecoder[42] >> 2) & 1
+        if E06 in FAILURE_STATUS: data["E06"] = FAILURE_STATUS[E06]
+        E07 = (newdecoder[42] >> 3) & 1
+        if E07 in FAILURE_STATUS: data["E07"] = FAILURE_STATUS[E07]
+        E08 = (newdecoder[42] >> 4) & 1
+        if E08 in FAILURE_STATUS: data["E08"] = FAILURE_STATUS[E08]
+
+        #S failure codes
+        S01 = (newdecoder[43] >> 14) & 1
+        if S01 in FAILURE_STATUS: data["S01"] = FAILURE_STATUS[S01]
+        S02 = (newdecoder[43] >> 15) & 1
+        if S02 in FAILURE_STATUS: data["S02"] = FAILURE_STATUS[S02]
+        S03 = (newdecoder[44] >> 0) & 1
+        if S03 in FAILURE_STATUS: data["S03"] = FAILURE_STATUS[S03]
+        S04 = (newdecoder[44] >> 1) & 1
+        if S04 in FAILURE_STATUS: data["S04"] = FAILURE_STATUS[S04]
+        S05 = (newdecoder[44] >> 2) & 1
+        if S05 in FAILURE_STATUS: data["S05"] = FAILURE_STATUS[S05]
+        S06 = (newdecoder[44] >> 3) & 1
+        if S06 in FAILURE_STATUS: data["S06"] = FAILURE_STATUS[S06]
+        S07 = (newdecoder[44] >> 4) & 1
+        if S07 in FAILURE_STATUS: data["S07"] = FAILURE_STATUS[S07]
+        S08 = (newdecoder[44] >> 5) & 1
+        if S08 in FAILURE_STATUS: data["S08"] = FAILURE_STATUS[S08]
+        S09 = (newdecoder[44] >> 6) & 1
+        if S09 in FAILURE_STATUS: data["S09"] = FAILURE_STATUS[S09]
+        S010 = (newdecoder[44] >> 7) & 1
+        if S010 in FAILURE_STATUS: data["S10"] = FAILURE_STATUS[S010]
+        S011 = (newdecoder[44] >> 8) & 1
+        if S011 in FAILURE_STATUS: data["S11"] = FAILURE_STATUS[S011]
+        S013 = (newdecoder[44] >> 9) & 1
+        if S013 in FAILURE_STATUS: data["S13"] = FAILURE_STATUS[S013]
+
+        S544 = newdecoder[45]; data["544"] = S544
+        S545 = newdecoder[46]; data["545"] = S545 
+        S546 = newdecoder[47]; data["546"] = S546
+                 
+        return data
+    
+    def read_modbus_setpoint_data(self) -> dict: # 703 t/m 715
+        """Read the reatime setpoint values"""
+ 
+        setpoint_data = self._read_holding_registers(unit=1, address=703, count=13)
+    
+        if setpoint_data.isError():
+            return {}
+
+        data = {}
+        newdecoder = ModbusTcpClient.convert_from_registers(setpoint_data.registers, data_type=ModbusTcpClient.DATATYPE.INT16)
+
+        S703 = newdecoder[0]; data["703"] = round(S703 * 0.1, 2)
+        S704 = newdecoder[1]; data["704"] = round(S704 * 0.1, 2)
+        S705 = newdecoder[2]; data["705"] = S705
+        S706 = newdecoder[3]; data["706"] = S706
+        S707 = newdecoder[4]; data["707"] = S707 
+        S708 = newdecoder[5]; data["708"] = S708
+        S709 = newdecoder[6]; data["709"] = S709 
+        S710 = newdecoder[7]; data["710"] = S710
+        S711 = newdecoder[8]; data["711"] = S711 
+        S712 = newdecoder[9]; data["712"] = S712
+        S713 = newdecoder[10]; data["713"] = S713
+        S714 = newdecoder[11]; data["714"] = round(S714 * 0.1, 2) 
+        S715 = newdecoder[12]; data["715"] = round(S715 * 0.1, 2) 
 
         return data
 
     def translate_mode_code_to_messages(self, mode: int, current_mode: list) -> list:
-        messages = []
-        if not mode:
+            messages = []
+            if not mode:
+                return messages
+
+            for code, mesg in current_mode:
+                if mode & code:
+                    messages.append(mesg)    
             return messages
-
-        for code, mesg in current_mode:
-            if mode & code:
-                messages.append(mesg)    
-        return messages
-
+    # write registers
     def write_registers(self, address, payload) -> None:
-        """Write register."""
-        with self._lock:
-            self._client.write_registers(address, payload, slave=1)
+            """Write register."""
+            with self._lock:
+                self._client.write_registers(address, payload, slave=1)
      
