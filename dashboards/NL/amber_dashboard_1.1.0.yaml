@@ -1,5 +1,10 @@
+title: Warmtepomp
+icon: mdi:heat-pump
 views:
-  - title: Info
+  - type: masonry
+    path: info
+    title: Info
+    icon: mdi:information
     cards:
       - type: entities
         entities:
@@ -100,12 +105,10 @@ views:
             name: Huidig setpoint cooling zone 2
             icon: mdi:thermometer-water
         title: Huidige setpoints
-    type: masonry
-    icon: mdi:information
   - type: masonry
-    icon: mdi:cog-outline
     path: settings
     title: Settings
+    icon: mdi:cog-outline
     cards:
       - type: entities
         entities:
@@ -413,8 +416,8 @@ views:
         show_header_toggle: false
   - type: masonry
     path: errorcodes
-    title: Errorcodes
-    icon: mdi:alert
+    title: Error codes
+    icon: mdi:bell-alert-outline
     cards:
       - type: entities
         entities:
@@ -515,7 +518,7 @@ views:
           - entity: sensor.amber_s11_cooling_anti_freezing_protection
             name: S11 - Storing vorst beveiliging in koelbedrijf
           - entity: sensor.amber_s13_failure_4_way_valve
-            name: 'S13 - Storing 4-weg klep '
+            name: S13 - Storing 4-weg klep
         title: S - Foutcodes
         show_header_toggle: false
       - type: entities
@@ -547,4 +550,3 @@ views:
           - entity: sensor.amber_p13_low_pressure_condensor_pressure_switch
             name: P13 - Lagedruk condensor druk schakelaar
         title: P - Foutcodes
-title: Itho Amber 65/95/120

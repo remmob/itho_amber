@@ -66,6 +66,9 @@ After rebooting Home Assistant, this integration can be configured through the i
 - port: \<default-port: 502\> 
 - polling time: \<default: 10 seconds\>
 
+## Wiki
+Visit the [wiki](https://github.com/remmob/itho_amber/wiki) for more information.
+
 ## Known issues
 -   The first V2.29 software, released in 5-2024 contains a bug.<br>
     When a Modbus value is written, the days when the legionella program 
@@ -81,9 +84,6 @@ After rebooting Home Assistant, this integration can be configured through the i
     Itho, I have asked them<br> to make all settings writeable... To be continued... 
 
 ## Roadmap
-- Adding sensor max DHW temperture setting.
-- Adding error codes (update expected 31-3-2025).
-- Realtime setpoints heatcurves
 - Adding Modbus RTU support
   
 
