@@ -88,5 +88,5 @@ action:
       message: >
         {{ trigger.from_state.attributes.friendly_name }}
       title: Heatpump Malfunction
-      notification_id: "warmtepomp malfunction"
+      notification_id: "Heatpump malfunction"
 mode: single
