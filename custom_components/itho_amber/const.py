@@ -51,16 +51,6 @@ LOGIN_STATUS = {
     2: "Factory level"
 }
 
-CURRENT_MODE = {
-    0x1: "DHW",    
-    0x2: "Heating",
-    0x4: "Cooling",
-    0x8: "DHW in progress",
-    0x10: "Heating in progress",
-    0x20: "Cooling in progress",
-    0x40: "timer in progress"
-} 
-
 CURRENT_OPERATION_MODE = {
     0: "Standby",
     1: "Heating",
@@ -1189,7 +1179,16 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=True,
-    ),  
+    ),
+    "delta-T": AmberModbusSensorEntityDescription( 
+        name="ΔT (Delta T) water outlet (Tuo) - water inlet (Tui)",
+        key="delta-T",
+        icon="mdi:water-thermometer-outline",
+        native_unit_of_measurement=UnitOfTemperature.KELVIN,
+        device_class=SensorDeviceClass.TEMPERATURE,
+        state_class=SensorStateClass.MEASUREMENT,
+        entity_registry_enabled_default=True,
+    ),    
 }
 
 @dataclass

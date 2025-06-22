@@ -9,7 +9,7 @@ from homeassistant.const import CONF_NAME
 from homeassistant.core import callback
 import homeassistant.util.dt as dt_util
 from pymodbus.constants import Endian
-from pymodbus.payload import BinaryPayloadBuilder
+from pymodbus.client import ModbusTcpClient
 
 from .const import (
     ATTR_MANUFACTURER,
@@ -82,9 +82,7 @@ class AmberSwitch(CoordinatorEntity, SwitchEntity):
     async def async_turn_on(self, **kwargs):
         """Send the on command."""
         address = int(self.entity_description.key)
-        builder = BinaryPayloadBuilder(byteorder=Endian.BIG)
-        builder.add_16bit_int(int(1))
-        self._hub.write_registers(address, payload=builder.to_registers())
+        self._hub.write_registers(address, payload=ModbusTcpClient.convert_to_registers(int(1), data_type=ModbusTcpClient.DATATYPE.INT16, word_order=Endian.BIG))
 
         for _ in range(
                 self.MAX_STATUS_CHANGE_TIME_SECONDS // self.POLL_FREQUENCY_SECONDS
@@ -100,9 +98,7 @@ class AmberSwitch(CoordinatorEntity, SwitchEntity):
     async def async_turn_off(self, **kwargs):
         """Send the off command."""
         address = int(self.entity_description.key)
-        builder = BinaryPayloadBuilder(byteorder=Endian.BIG)
-        builder.add_16bit_int(int(0))
-        self._hub.write_registers(address, payload=builder.to_registers())
+        self._hub.write_registers(address, payload=ModbusTcpClient.convert_to_registers(int(0), data_type=ModbusTcpClient.DATATYPE.INT16, word_order=Endian.BIG))
         
         for _ in range(
                 self.MAX_STATUS_CHANGE_TIME_SECONDS // self.POLL_FREQUENCY_SECONDS

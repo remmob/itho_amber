@@ -1,6 +1,6 @@
 ![Version](https://img.shields.io/github/v/release/remmob/itho_amber 'Release')
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg 'Default Home Assistant community store')](https://github.com/custom-components/hacs)
-![total downloads](https://img.shields.io/github/downloads/remmob/itho_amber/total 'total downloads')
+![total downloads](https://img.shields.io/github/downloads/remmob/itho_amber/releases 'total downloads')
 [![total issues](https://img.shields.io/github/issues/remmob/itho_amber 'total issues the integration')](https://github.com/remmob/itho_amber/issues)
 ![Stars](https://img.shields.io/github/stars/remmob/itho_amber)
 
@@ -81,7 +81,4 @@ After rebooting Home Assistant, this integration can be configured through the i
     Itho, I have asked them<br> to make all settings writeable... To be continued... 
 
 ## Roadmap
-- Adding sensor max DHW temperture setting.
-- Adding error codes (update expected 31-3-2025).
-- Realtime setpoints heatcurves
 - Adding Modbus RTU support

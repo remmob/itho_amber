@@ -6,8 +6,11 @@ from homeassistant import config_entries
 from homeassistant.const import (CONF_HOST, CONF_NAME, CONF_PORT,
                                  CONF_SCAN_INTERVAL)
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.selector import TextSelector
 
 from .const import DEFAULT_NAME, DEFAULT_PORT, DEFAULT_SCAN_INTERVAL, DOMAIN
+from .hub import AmberModbusHub
+
 
 DATA_SCHEMA = vol.Schema(
     {
@@ -67,3 +70,32 @@ class AmberModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user", data_schema=DATA_SCHEMA, errors=errors
         )
+
+    # async def async_step_reconfigure(self, user_input=None):
+    #     """Handle reconfiguration of the integration."""
+    #     errors = {}
+
+    #     if user_input:
+    #         host = user_input[CONF_HOST]
+    #         port = user_input[CONF_PORT]
+    #         scan_interval = user_input[CONF_SCAN_INTERVAL]
+
+    #         # Validatie van de nieuwe configuratie
+    #         hub = AmberModbusHub(self.hass, "Test", host, port, scan_interval)
+    #         try:
+    #             await hub.async_test_connection()
+    #         except Exception:
+    #             errors["base"] = "cannot_connect"
+    #         else:
+    #             entry = self._get_reconfigure_entry()
+    #             return self.async_update_reload_and_abort(entry, data_updates=user_input)
+
+    #     return self.async_show_form(
+    #         step_id="reconfigure",
+    #         data_schema=vol.Schema({
+    #             vol.Required(CONF_HOST, default=self.config_entry.data[CONF_HOST]): TextSelector(),
+    #             vol.Required(CONF_PORT, default=self.config_entry.data[CONF_PORT]): TextSelector(),
+    #             vol.Optional(CONF_SCAN_INTERVAL, default=self.config_entry.data[CONF_SCAN_INTERVAL]): vol.Coerce(int),
+    #         }),
+    #         errors=errors,
+    #     )

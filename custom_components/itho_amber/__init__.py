@@ -6,7 +6,9 @@ import logging
 import asyncio
 
 import voluptuous as vol
+from homeassistant.const import __version__
 import homeassistant.helpers.config_validation as cv
+from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PORT, CONF_SCAN_INTERVAL
 from homeassistant.core import HomeAssistant
@@ -15,7 +17,7 @@ from .const import (
     DOMAIN,
     DEFAULT_NAME,
     DEFAULT_SCAN_INTERVAL,
-    )
+)
 
 from .hub import AmberModbusHub
 
@@ -37,34 +39,48 @@ CONFIG_SCHEMA = vol.Schema(
 )
 
 PLATFORMS = ["sensor", "switch", "number", "select"]
+REQUIRED_VERSION = "2025.6.0"
 
-async def async_setup(_hass: HomeAssistant, _config: Config) -> bool:
+def check_homeassistant_version():
+    if __version__ < REQUIRED_VERSION:
+        raise ValueError(f"Deze integratie vereist Home Assistant {REQUIRED_VERSION} of hoger.")
+
+check_homeassistant_version()
+
+async def async_setup(_hass: HomeAssistant, _config: dict) -> bool:
     """Set up this integration using YAML is not supported."""
     return True
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
-    """Set up a Amber modbus integration using UI."""
-    hass.data[DOMAIN] = {}
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Set up an Amber Modbus integration using UI."""
+    if DOMAIN not in hass.data:
+        hass.data[DOMAIN] = {}
 
-    host = entry.data[CONF_HOST]
-    name = entry.data[CONF_NAME]
-    port = entry.data[CONF_PORT]
-    scan_interval = entry.data[CONF_SCAN_INTERVAL]
-    
-    _LOGGER.debug("Setup %s.%s", DOMAIN, name)
+    name = entry.data.get("name")
+    host = entry.data.get("host")
+    port = entry.data.get("port")
+    scan_interval = entry.data.get("scan_interval")
+
+    _LOGGER.info("Setting up %s.%s", DOMAIN, name)
+
+    if name in hass.data[DOMAIN]:
+        _LOGGER.warning("Config entry %s is already set up!", name)
+        return False
 
     hub = AmberModbusHub(hass, name, host, port, scan_interval)
     await hub.async_config_entry_first_refresh()
 
-    """Register the hub."""
     hass.data[DOMAIN][name] = {"hub": hub}
 
     for component in PLATFORMS:
-        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+        await hass.config_entries.async_forward_entry_setups(entry, [component])
+
+    _LOGGER.info("Integration setup completed successfully!")
     return True
 
-async def async_unload_entry(hass, entry):
-    """Unload Amber mobus entry."""
+
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Unload Amber Modbus entry."""
     unload_ok = all(
         await asyncio.gather(
             *[
@@ -73,8 +89,10 @@ async def async_unload_entry(hass, entry):
             ]
         )
     )
-    if not unload_ok:
-        return False
+    
+    if unload_ok:
+        name = entry.data.get(CONF_NAME)
+        if name in hass.data[DOMAIN]:
+            hass.data[DOMAIN].pop(name)
 
-    hass.data[DOMAIN].pop(entry.data["name"])
-    return True
+    return unload_ok

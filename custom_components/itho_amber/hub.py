@@ -1,638 +1,639 @@
-"""Itho Daalderop Amber 65/95/120 Modbus Hub."""
+"""Itho Daalderop Amber 65/95/120 Modbus Hub/coordinator."""
 
 import logging
 import threading
-
+import asyncio
+import traceback
 from datetime import timedelta
-from voluptuous.validators import Number
 
+from voluptuous.validators import Number
 from pymodbus.client import ModbusTcpClient
 from pymodbus.constants import Endian
-from pymodbus.exceptions import ConnectionException
+from pymodbus.exceptions import ConnectionException, ModbusIOException
 
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.core import CALLBACK_TYPE, callback, HomeAssistant
 
 from .const import (
-    DOMAIN,
-    CURRENT_MODE,
-    LOGIN_STATUS,
-    ON_OFF_STATUS,
-    PUMP_TYPE,
-    CURRENT_OPERATION_MODE,
-    EXTERNAL_CONTROL,
-    HWTBH_PRIORITY_MODE,
-    MODE_SIGNAL_TYPE,
-    MODE_SIGNAL_OUTPUT,
-    DISPLAY_TIME,
-    FAILURE_STATUS,
-    ACTIVE_STATUS,
-)
+    DOMAIN, LOGIN_STATUS, ON_OFF_STATUS, PUMP_TYPE, CURRENT_OPERATION_MODE,
+    EXTERNAL_CONTROL, HWTBH_PRIORITY_MODE, MODE_SIGNAL_TYPE, MODE_SIGNAL_OUTPUT,
+    DISPLAY_TIME, FAILURE_STATUS, ACTIVE_STATUS)
 
 _LOGGER = logging.getLogger(__name__)
 
 class AmberModbusHub(DataUpdateCoordinator[dict]):
     """Thread safe wrapper class for pymodbus."""
 
-    def __init__(self, hass: HomeAssistant, name: str, host: str, port: Number, scan_interval: Number):
+
+    def __init__(self, hass: HomeAssistant, name: str, host: str, port: int | float, scan_interval: int | float):
         """Initialize the Itho Daalderop Amber 65/95/120 Modbus hub."""
         super().__init__(hass, _LOGGER, name=name, update_interval=timedelta(seconds=scan_interval))
 
-        self._client = ModbusTcpClient(host=host, port=port, timeout=60)
         self._lock = threading.Lock()
-        self.setting_data_1: dict = {}
-        self.setting_data_2: dict = {}
-        self.setting_data_3: dict = {}
-        self.setting_data_4: dict = {}
-        self.setting_data_5: dict = {}
-        self.setting_data_6: dict = {}
-        self.realtime_data: dict = {}
-        self.setpoint_data = {}
-        
+        self._client = None
+        self.data_store: dict[str, dict] = {
+            "settings": {f"setting_data_{i}": {} for i in range(1, 7)},
+            "realtime_data": {},
+            "setpoint_data": {}
+        }
+
+        try:
+            self._client = ModbusTcpClient(host=host, port=port, timeout=60)
+        except Exception as e:
+            _LOGGER.error(f"Error initializing Modbus client: {e}")
+
     @callback
     def async_remove_listener(self, update_callback: CALLBACK_TYPE) -> None:
         """Remove data update listener."""
         super().async_remove_listener(update_callback)
 
-        """No listeners left then close connection"""
+        # If no listeners are left, safely close the connection
         if not self._listeners:
-            self.close()
+            try:
+                self.close()
+            except Exception as e:
+                _LOGGER.error(f"Error while closing the connection: {e}")
 
     def close(self) -> None:
         """Disconnect client."""
-        with self._lock:
-            self._client.close()
+        try:
+            with self._lock:
+                self._client.close()
+        except Exception as e:
+            _LOGGER.error(f"Error closing connection: {e}")
 
     def _read_holding_registers(self, unit, address, count) -> None:
         """Read holding registers."""
-        with self._lock:
-            return self._client.read_holding_registers(address=address, count=count, slave=unit)  
-    
-    async def _async_update_data(self) -> dict:
-
-        setting_data_1 = {}
-        setting_data_2 = {}
-        setting_data_3 = {}
-        setting_data_4 = {}
-        setting_data_5 = {}
-        setting_data_6 = {}
-        realtime_data = {}
-        setpoint_data = {}
-         
         try:
-            """Read settings data 1"""
-            setting_data_1 = await self.hass.async_add_executor_job(
-                   self.read_modbus_setting_data_1)
+            with self._lock:
+                return self._client.read_holding_registers(address=address, count=count, slave=unit)
+        except Exception as e:
+            _LOGGER.error(f"Error while reading registers: {e}")
+            return None
 
-            """Read settings data 2"""
-            setting_data_2 = await self.hass.async_add_executor_job(
-                   self.read_modbus_setting_data_2)
+    async def _async_update_data(self) -> dict:
+        """Update Modbus data asynchronously."""
+        
+        data_sources = [
+            self.read_modbus_setting_data_1,
+            self.read_modbus_setting_data_2,
+            self.read_modbus_setting_data_3,
+            self.read_modbus_setting_data_4,
+            self.read_modbus_setting_data_5,
+            self.read_modbus_setting_data_6,
+            self.read_modbus_realtime_data,
+            self.read_modbus_setpoint_data
+        ]
 
-            """Read settings data 3"""
-            setting_data_3 = await self.hass.async_add_executor_job(
-                   self.read_modbus_setting_data_3)
+        data = {}
 
-            """Read settings data 4"""
-            setting_data_4 = await self.hass.async_add_executor_job(
-                   self.read_modbus_setting_data_4)
+        try:
+            results = await asyncio.gather(
+                *(self.hass.async_add_executor_job(source) for source in data_sources),
+                return_exceptions=True  # Prevent one failure is breaking
+            )
 
-            """Read settings data 5"""
-            setting_data_5 = await self.hass.async_add_executor_job(
-                   self.read_modbus_setting_data_5)
-
-            """Read settings data 6"""
-            setting_data_6 = await self.hass.async_add_executor_job(
-                   self.read_modbus_setting_data_6)                   
-
-            """Read realtime data"""
-            realtime_data = await self.hass.async_add_executor_job(
-                self.read_modbus_realtime_data)
-            
-            """Read setpoint data"""
-            setpoint_data = await self.hass.async_add_executor_job(
-                self.read_modbus_setpoint_data)
+            for source, result in zip(data_sources, results):
+                if isinstance(result, Exception):
+                    _LOGGER.error(f"Error fetching data from {source.__name__}: {result}")
+                else:
+                    data.update(result)
 
         except ConnectionException:
-            _LOGGER.error("Reading realtime data failed! the Itho Daalderop Amber 65/95/120 is unreachable.")
+            _LOGGER.error("Reading Modbus data failed! Device is unreachable.")
 
-        return {**setting_data_1, **setting_data_2, **setting_data_3, **setting_data_4, **setting_data_5, **setting_data_6, **realtime_data, **setpoint_data}
-
+        return data
+    
+    # settings data 1
     def read_modbus_setting_data_1(self) -> dict: #0 t/m 119
         """Read settings data 1"""
         setting_data_1 = self._read_holding_registers(unit=1, address=0, count=120)
         
         if setting_data_1.isError():
+            _logger.error("Failed to read Modbus registers for settings data")
             return {}
 
         data = {}
-        newdecoder = ModbusTcpClient.convert_from_registers(setting_data_1.registers, data_type=ModbusTcpClient.DATATYPE.INT16) 
 
-        S0 = newdecoder[0]; data["0"] = S0; S1 = newdecoder[1]; data["1"] = S1; S2 = newdecoder[2]; data["2"] = S2
-        S3 = newdecoder[3]; data["3"] = S3; S4 = newdecoder[4]; data["4"] = S4; S5 = newdecoder[5]; data["5"] = S5
-        S6 = newdecoder[6]; data["6"] = S6; S7 = newdecoder[7]; data["7"] = S7; S8 = newdecoder[8]; data["8"] = S8
-        
-        S9 = newdecoder[9]; 
-        if S9 in ON_OFF_STATUS: data ["9"] = ON_OFF_STATUS[S9] 
-    
-        S10 = newdecoder[10]; data["10"] = S10
-        S11 = newdecoder[11]; data["11"] = S11 
-        S12 = newdecoder[12]; data["12"] = S12
-        S13 = newdecoder[13]; data["13"] = S13 
-        S14 = newdecoder[14]; data["14"] = S14 
-        S15 = newdecoder[15]; data["15"] = S15
-        S16 = newdecoder[16]; data["16"] = S16 
-        S17 = newdecoder[17]; data["17"] = S17
-        
-        S18 = newdecoder[18]; 
-        if S18 in ON_OFF_STATUS: data ["18"] = ON_OFF_STATUS[S18]  
-        
-        S19 = newdecoder[19]; data["19"] = S19; S20 = newdecoder[20]; data["20"] = S20; S21 = newdecoder[21]; data["21"] = S21
-        S22 = newdecoder[22]; data["22"] = S22; S23 = newdecoder[23]; data["23"] = S23; S24 = newdecoder[24]; data["24"] = S24
-        S25 = newdecoder[25]; data["25"] = S25
+        try:
+            # Ensure registers exist before converting
+            if not hasattr(setting_data_1, "registers") or not isinstance(setting_data_1.registers, list) or len(setting_data_1.registers) < 120:
+                _logger.error("Error: The setpoint data, did not received enough registers!")
+                return {}
 
-        S26 = newdecoder[26]; data["26"] = S26; S27 = newdecoder[27]; data["27"] = S27; S28 = newdecoder[28]; data["28"] = S28
-        S29 = newdecoder[29]; data["29"] = S29; S30 = newdecoder[30]; data["30"] = bool(S30)
-        S31 = newdecoder[31]; data["31"] = S31; S32 = newdecoder[32]; data["32"] = S32; S33 = newdecoder[33]; data["33"] = S33
-        S34 = newdecoder[34]; data["34"] = S34; S35 = newdecoder[35]; data["35"] = S35; S36 = newdecoder[36]; data["36"] = S36
-        S37 = newdecoder[37]; data["37"] = S37; S38 = newdecoder[38]; data["38"] = S38; S39 = newdecoder[39]; data["39"] = S39
-        S40 = newdecoder[40]; data["40"] = S40; S41 = newdecoder[41]; data["41"] = S41; S42 = newdecoder[42]; data["42"] = S42
-        S43 = newdecoder[43]; data["43"] = S43; S44 = newdecoder[44]; data["44"] = S44; S45 = newdecoder[45]; data["45"] = S45
-        S46 = newdecoder[46]; data["46"] = S46; S47 = newdecoder[47]; data["47"] = S47; S48 = newdecoder[48]; data["48"] = S48
-        S49 = newdecoder[49]; data["49"] = S49; S50 = newdecoder[50]; data["50"] = S50; S51 = newdecoder[51]; data["51"] = S51
-        S52 = newdecoder[52]; data["52"] = S52; S53 = newdecoder[53]; data["53"] = S53; S54 = newdecoder[54]; data["54"] = S54
-        S55 = newdecoder[55]; data["55"] = S55; S56 = newdecoder[56]; data["56"] = S56; S57 = newdecoder[57]; data["57"] = S57
-        S58 = newdecoder[58]; data["58"] = S58; S59 = newdecoder[59]; data["59"] = S59; S60 = newdecoder[60]; data["60"] = bool(S60)
-        S61 = newdecoder[61]; data["61"] = S61; S62 = newdecoder[62]; data["62"] = S62; S63 = newdecoder[63]; data["63"] = S63
-        S64 = newdecoder[64]; data["64"] = S64; S65 = newdecoder[65]; data["65"] = S65
+            newdecoder = ModbusTcpClient.convert_from_registers(setting_data_1.registers, data_type=ModbusTcpClient.DATATYPE.INT16) 
 
-        S66 = newdecoder[66]; 
-        if S66 in ON_OFF_STATUS: data ["66"] = ON_OFF_STATUS[S66] 
+            # Ensure decoded data has enough elements
+            if len(newdecoder) < 120:
+                _logger.error("Error: Unexpected size of decoded data")
+                return {}
+            
+            # Automatic calculation of register-index mapping
+            register_map = {reg: reg - 0 for reg in [
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16, 17,
+                19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33,
+                34, 35, 36, 37, 38 , 39, 40, 41, 42, 43, 44, 45, 46, 47, 48,
+                49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
+                64, 65, 67, 68, 69, 70, 72, 73, 74, 75, 76, 77, 78, 79, 80,
+                81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95,
+                96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108,
+                109, 110, 111, 112, 113, 114, 115, 116, 117, 118
+            ]}
 
-        S67 = newdecoder[67]; data["67"] = S67; S68 = newdecoder[68]; data["68"] = S68 
-        S69 = newdecoder[69]; data["69"] = S69; S70 = newdecoder[70]; data["70"] = S70
+            # Process each register
+            for register, index in register_map.items():
+                if index < len(newdecoder):
+                    data[str(register)] = newdecoder[index]
+                else:
+                    _logger.warning(f"Register {register} expects index {index}, but newdecoder has length {len(newdecoder)}")
 
-        S71 = newdecoder[71]; 
-        if S71 in ON_OFF_STATUS: data ["71"] = ON_OFF_STATUS[S71] 
+            # define mapping for statuses
+            status = {
+                "ON_OFF_STATUS": { "9": 9, "18": 18, "66": 66, "71": 71, "73": 73,},
+                "MODE_SIGNAL_TYPE": { "119": 119 }
+            }
 
-        S72 = newdecoder[72]; data["72"] = S72; 
-        
-        S73 = newdecoder[73]; 
-        if S73 in ON_OFF_STATUS: data ["73"] = ON_OFF_STATUS[S73] 
+             # Loop through the dictionary to process statuses
+            for category, statuses in status.items():
+                for key, index in statuses.items():
+                    value = newdecoder[index]
+                    if value in globals()[category]:  
+                        data[key] = globals()[category][value]
 
-        S74 = newdecoder[74]; data["74"] = S74; S75 = newdecoder[75]; data["75"] = S75
+        except IndexError as e:
+            _logger.error(f"IndexError: {e}")
+            return {}
 
-        S76= newdecoder[76]; data["76"] = S76; S77 = newdecoder[77]; data["77"] = S77; S78 = newdecoder[78]; data["78"] = S78
-        S79= newdecoder[79]; data["79"] = S79; S80 = newdecoder[80]; data["80"] = S80; S81 = newdecoder[81]; data["81"] = S81
-        S82= newdecoder[82]; data["82"] = S82; S83 = newdecoder[83]; data["83"] = S83; S84 = newdecoder[84]; data["84"] = S84
-        S85= newdecoder[85]; data["85"] = S85; S86 = newdecoder[86]; data["86"] = S86; S87 = newdecoder[87]; data["87"] = S87
-        S88= newdecoder[88]; data["88"] = S88; S89 = newdecoder[89]; data["89"] = S89
-
-        S90 = newdecoder[90]; data["90"] = bool(S90); S91 = newdecoder[91]; data["91"] = S91; S92 = newdecoder[92]; data["92"] = S92
-        S93 = newdecoder[93]; data["93"] = S93; S94 = newdecoder[94]; data["94"] = S94; S95 = newdecoder[95]; data["95"] = S95
-        S96 = newdecoder[96]; data["96"] = S96; S97 = newdecoder[97]; data["97"] = S97; S98 = newdecoder[98]; data["98"] = S98
-        S99 = newdecoder[99]; data["99"] = S99; S100 = newdecoder[100]; data["100"] = S100; S101 = newdecoder[101]; data["101"] = S101
-        S102 = newdecoder[102]; data["102"] = S102; S103 = newdecoder[103]; data["103"] = S103; S104 = newdecoder[104]; data["104"] = S104
-        S105 = newdecoder[105]; data["105"] = S105; S106 = newdecoder[106]; data["106"] = S106; S107 = newdecoder[107]; data["107"] = S107
-        S108 = newdecoder[108]; data["108"] = S108; S109 = newdecoder[109]; data["109"] = S109; S110 = newdecoder[110]; data["110"] = S110 
-        S111 = newdecoder[111]; data["111"] = S111; S112 = newdecoder[112]; data["112"] = S112; S113 = newdecoder[113]; data["113"] = S113
-        S114 = newdecoder[114]; data["114"] = S114; S115 = newdecoder[115]; data["115"] = S115; S116 = newdecoder[116]; data["116"] = S116
-        S117 = newdecoder[117]; data["117"] = S117; S118 = newdecoder[118]; data["118"] = S118
-        
-        S119 = newdecoder[119]; 
-        if S119 in MODE_SIGNAL_TYPE: data ["119"] = MODE_SIGNAL_TYPE[S119]
+        except Exception as e:
+            _logger.error(f"Unexpected Error: {e}\n{traceback.format_exc()}")
+            return {}    
 
         return data
 
+    # settings data 2
     def read_modbus_setting_data_2(self) -> dict: #120 t/m 219
         """Read settings data 2"""
-        setting_data_2 = self._read_holding_registers(unit=1, address=120, count=100) #0x85
+        setting_data_2 = self._read_holding_registers(unit=1, address=120, count=100) 
         
         if setting_data_2.isError():
+            _logger.error("Failed to read Modbus registers for settings data")
             return {}
 
         data = {}
-        newdecoder = ModbusTcpClient.convert_from_registers(setting_data_2.registers, data_type=ModbusTcpClient.DATATYPE.INT16)
 
-        S120 = newdecoder[0] 
-        if S120 in ON_OFF_STATUS: data ["120"] = ON_OFF_STATUS[S120]
+        try:
+            # Ensure registers exist before converting
+            if not hasattr(setting_data_2, "registers") or not isinstance(setting_data_2.registers, list) or len(setting_data_2.registers) < 100:
 
-        S121 = newdecoder[1] 
-        if S121 in ON_OFF_STATUS: data ["121"] = ON_OFF_STATUS[S121]
+                _logger.error("Error: The setpoint data, did not received enough registers!")
+                return {}
 
-        S122 = newdecoder[2]
-        if S122 in ON_OFF_STATUS: data ["122"] = ON_OFF_STATUS[S122]
+            newdecoder = ModbusTcpClient.convert_from_registers(setting_data_2.registers, data_type=ModbusTcpClient.DATATYPE.INT16)
 
-        S123 = newdecoder[3]; data["123"] = S123; S124 = newdecoder[4]; data["124"] = S124; S125 = newdecoder[5]; data["125"] = S125
+            # Ensure decoded data has enough elements
+            if len(newdecoder) < 100:
+                _logger.error("Error: Unexpected size of decoded data")
+                return {}
+
+            # Automatic calculation of register-index mapping
+            register_map = {reg: reg - 120 for reg in [
+                123, 124, 125, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136,
+                138, 139, 140, 141, 142, 151, 152, 153, 154, 155, 156, 157, 158, 
+                159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 
+                172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 
+                185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 
+                198, 199, 200, 201, 204, 205, 206, 207, 208, 209, 210, 211, 212,
+                213, 214, 215, 216, 217, 219
+            ]}
+
+            # Process each register
+            for register, index in register_map.items():
+                if index < len(newdecoder):
+                    data[str(register)] = newdecoder[index]
+                else:
+                    _logger.warning(f"Register {register} expects index {index}, but newdecoder has length {len(newdecoder)}")
+
+            # define mapping for statuses
+            status = {
+                "ON_OFF_STATUS": { "120": 0, "121": 1, "122": 2, "143": 23, "144": 24, "145": 25, "146": 26, "147": 27, 
+                    "148": 28, "149": 29, "150": 30, "218": 98 },
+                "PUMP_TYPE": { "137": 17 },	
+                "MODE_SIGNAL_OUTPUT": { "202": 82 },	
+                "MODE_SIGNAL_TYPE": { "203": 83 },	
+                "DISPLAY_TIME": { "126": 6 }
+            }
         
-        S126 = newdecoder[6]
-        if S126 in DISPLAY_TIME: data["126"] = DISPLAY_TIME[S126] 
-        
-        S127 = newdecoder[7]; data["127"] = S127; S128 = newdecoder[8]; data["128"] = S128; S129 = newdecoder[9]; data["129"] = S129
-        S130 = newdecoder[10]; data["130"] = S130; S131 = newdecoder[11]; data["131"] = S131; S132 = newdecoder[12]; data["132"] = S132
-        S133 = newdecoder[13]; data["133"] = S133; S134 = newdecoder[14]; data["134"] = S134; S135 = newdecoder[15]; data["135"] = bool(S135)
-        S136 = newdecoder[16]; data["136"] = S136
-       
-        S137 = newdecoder[17]
-        if S137 in PUMP_TYPE: data ["137"] = PUMP_TYPE[S137]
+            # Loop through the dictionary to process statuses
+            for category, statuses in status.items():
+                for key, index in statuses.items():
+                    value = newdecoder[index]
+                    if value in globals()[category]:  
+                        data[key] = globals()[category][value]
 
-        S138 = newdecoder[18]; data["138"] = S138; S139 = newdecoder[19]; data["139"] = S139; S140 = newdecoder[20]; data["140"] = S140
-        S141 = newdecoder[21]; data["141"] = S141; S142 = newdecoder[22]; data["142"] = S142
 
-        S143 = newdecoder[23]
-        if S143 in ON_OFF_STATUS: data ["143"] = ON_OFF_STATUS[S143]
-       
-        S144 = newdecoder[24]
-        if S144 in ON_OFF_STATUS: data ["144"] = ON_OFF_STATUS[S144]
+        except IndexError as e:
+            _logger.error(f"IndexError: {e}")
+            return {}
 
-        S145 = newdecoder[25]
-        if S145 in ON_OFF_STATUS: data ["145"] = ON_OFF_STATUS[S145]
-
-        S146 = newdecoder[26]
-        if S146 in ON_OFF_STATUS: data ["146"] = ON_OFF_STATUS[S146]
-
-        S147 = newdecoder[27]
-        if S147 in ON_OFF_STATUS: data ["147"] = ON_OFF_STATUS[S147]
-
-        S148 = newdecoder[28]
-        if S148 in ON_OFF_STATUS: data ["148"] = ON_OFF_STATUS[S148]
-
-        S149 = newdecoder[29]
-        if S149 in ON_OFF_STATUS: data ["149"] = ON_OFF_STATUS[S149]
-
-        S150 = newdecoder[30]
-        if S150 in ON_OFF_STATUS: data ["150"] = ON_OFF_STATUS[S150]
-
-        S151 = newdecoder[31]; data["151"] = S151; S152 = newdecoder[32]; data["152"] = S152; S153 = newdecoder[33]; data["153"] = S153
-        S154 = newdecoder[34]; data["154"] = S154; S155 = newdecoder[35]; data["155"] = S155; S156 = newdecoder[36]; data["156"] = S156
-        S157 = newdecoder[37]; data["157"] = S157; S158 = newdecoder[38]; data["158"] = S158; S159 = newdecoder[39]; data["159"] = S159
-        S160 = newdecoder[40]; data["160"] = S160; S161 = newdecoder[41]; data["161"] = S161; S162 = newdecoder[42]; data["162"] = S162
-        S163 = newdecoder[43]; data["163"] = S163; S164 = newdecoder[44]; data["164"] = S164; S165 = newdecoder[45]; data["165"] = S165
-        S166 = newdecoder[46]; data["166"] = S166; S167 = newdecoder[47]; data["167"] = S167; S168 = newdecoder[48]; data["168"] = S168
-        S169 = newdecoder[49]; data["169"] = S169; S170 = newdecoder[50]; data["170"] = S170; S171 = newdecoder[51]; data["171"] = S171
-        S172 = newdecoder[52]; data["172"] = S172; S173 = newdecoder[53]; data["173"] = S173; S174 = newdecoder[54]; data["174"] = S174
-        S175 = newdecoder[55]; data["175"] = S175; S176 = newdecoder[56]; data["176"] = S176; S177 = newdecoder[57]; data["177"] = S177
-        S178 = newdecoder[58]; data["178"] = S178; S179 = newdecoder[59]; data["179"] = S179; S180 = newdecoder[60]; data["180"] = S180
-        S181 = newdecoder[61]; data["181"] = S181; S182 = newdecoder[62]; data["182"] = S182; S183 = newdecoder[63]; data["183"] = S183
-        S184 = newdecoder[64]; data["184"] = S184; S185 = newdecoder[65]; data["185"] = S185; S186 = newdecoder[66]; data["186"] = S186
-        S187 = newdecoder[67]; data["187"] = S187; S188 = newdecoder[68]; data["188"] = S188; S189 = newdecoder[69]; data["189"] = S189
-        S190 = newdecoder[70]; data["190"] = S190; S191 = newdecoder[71]; data["191"] = S191; S192 = newdecoder[72]; data["192"] = S192
-        S193 = newdecoder[73]; data["193"] = S193; S194 = newdecoder[74]; data["194"] = S194; S195 = newdecoder[75]; data["195"] = S195
-        S196 = newdecoder[76]; data["196"] = S196; S197 = newdecoder[77]; data["197"] = S197; S198 = newdecoder[78]; data["198"] = S198
-        S199 = newdecoder[79]; data["199"] = S199; S200 = newdecoder[80]; data["200"] = S200; S201 = newdecoder[81]; data["201"] = S201
-
-        S202 = newdecoder[82]
-        if S202 in MODE_SIGNAL_OUTPUT: data ["202"] = MODE_SIGNAL_OUTPUT[S202]
-
-        S203 = newdecoder[83]
-        if S203 in MODE_SIGNAL_TYPE: data ["203"] = MODE_SIGNAL_TYPE[S203]
-
-        S204 = newdecoder[84]; data["204"] = S204; S205 = newdecoder[85]; data["205"] = S205; S206 = newdecoder[86]; data["206"] = S206
-        S207 = newdecoder[87]; data["207"] = S207; S208 = newdecoder[88]; data["208"] = S208; S209 = newdecoder[89]; data["209"] = S209
-        S210 = newdecoder[90]; data["210"] = S210; S211 = newdecoder[91]; data["211"] = S211; S212 = newdecoder[92]; data["212"] = S212
-        S213 = newdecoder[93]; data["213"] = S213; S214 = newdecoder[94]; data["214"] = S214; S215 = newdecoder[95]; data["215"] = S215
-        S216 = newdecoder[96]; data["216"] = S216; S217 = newdecoder[97]; data["217"] = S217
-
-        S218 = newdecoder[98]
-        if S218 in ON_OFF_STATUS:
-            data ["218"] = ON_OFF_STATUS[S218]
-
-        S219 = newdecoder[99]; data["219"] = S219
+        except Exception as e:
+            _logger.error(f"Unexpected Error: {e}\n{traceback.format_exc()}")
+            return {}
 
         return data
 
+    # settings data 3
     def read_modbus_setting_data_3(self) -> dict: #314 t/m 324
         """Read settings data 3"""
         setting_data_3 = self._read_holding_registers(unit=1, address=314, count=11)
         
         if setting_data_3.isError():
+            _logger.error("Failed to read Modbus registers for settings data")
             return {}
 
         data = {}
-        newdecoder = ModbusTcpClient.convert_from_registers(setting_data_3.registers, data_type=ModbusTcpClient.DATATYPE.INT16)
 
-        S314 = newdecoder[0]; data["314"] = S314; S315 = newdecoder[1]; data["315"] = S315; S316 = newdecoder[2]; data["316"] = S316
-        S317 = newdecoder[3]; data["317"] = S317; S318 = newdecoder[4]; data["318"] = S318; S319 = newdecoder[5]; data["319"] = S319
-        S320 = newdecoder[6]; data["320"] = S320; S321 = newdecoder[7]; data["321"] = S321; S322 = newdecoder[8]; data["322"] = S322
-        
-        S323 = newdecoder[9]
-        if S323 in ON_OFF_STATUS:
-            data ["323"] = ON_OFF_STATUS[S323]
+        try:
+            # Ensure registers exist before converting
+            if not hasattr(setting_data_3, "registers") or not isinstance(setting_data_3.registers, list) or len(setting_data_3.registers) < 11:
+                _logger.error("Error: The setpoint data, did not received enough registers!")
+                return {}
 
-        S324= newdecoder[10]
-        if S324 in ON_OFF_STATUS:
-            data ["324"] = ON_OFF_STATUS[S324]
+            newdecoder = ModbusTcpClient.convert_from_registers(setting_data_3.registers, data_type=ModbusTcpClient.DATATYPE.INT16)
 
+            # Ensure decoded data has enough elements
+            if len(newdecoder) < 11:
+                _logger.error("Error: Unexpected size of decoded data")
+                return {}
+            
+            # Map decoded values
+            register_map = {reg: reg - 314 for reg in [314, 315, 316, 317, 318, 319, 320, 321, 322 ]}
+
+            # Process each register
+            for register, index in register_map.items():
+                if index < len(newdecoder):
+                    data[str(register)] = newdecoder[index]
+                else:
+                    _logger.warning(f"Register {register} expects index {index}, but newdecoder has length {len(newdecoder)}")
+
+            S323 = newdecoder[9]
+            if S323 in ON_OFF_STATUS:
+                data ["323"] = ON_OFF_STATUS[S323]
+
+            S324= newdecoder[10]
+            if S324 in ON_OFF_STATUS:
+                data ["324"] = ON_OFF_STATUS[S324]    
+
+        except IndexError as e:
+            _logger.error(f"IndexError: {e}")
+            return {}
+
+        except Exception as e:
+            _logger.error(f"Unexpected Error: {e}\n{traceback.format_exc()}")
+            return {}
+ 
         return data
-
+    
+    # Settings data 4
     def read_modbus_setting_data_4(self) -> dict: #334 & 340
         """Read settings data 4"""
         setting_data_4 = self._read_holding_registers(unit=1, address=334, count=7)
         
         if setting_data_4.isError():
+            _logger.error("Failed to read Modbus registers for settings data")
             return {}
 
         data = {}
-        newdecoder = ModbusTcpClient.convert_from_registers(setting_data_4.registers, data_type=ModbusTcpClient.DATATYPE.INT16)
 
-        S334 = newdecoder[0]; data["334"] = S334; S335 = newdecoder[1]; data["335"] = S335; S336 = newdecoder[2]; data["336"] = S336
-        S337 = newdecoder[3]; data["337"] = S337; S338 = newdecoder[4]; data["338"] = S338 
+        try:
+            # Ensure registers exist before converting
+            if not hasattr(setting_data_4, "registers") or not isinstance(setting_data_4.registers, list) or len(setting_data_4.registers) < 7:
+                _logger.error("Error: The setpoint data, did not received enough registers!")
+                return {}
+                
+            newdecoder = ModbusTcpClient.convert_from_registers(setting_data_4.registers, data_type=ModbusTcpClient.DATATYPE.INT16)
+            
+            # Ensure decoded data has enough elements
+            if len(newdecoder) < 7:
+                _logger.error("Error: Unexpected size of decoded data")
+                return {}
+            
+            # Map decoded values
+            register_map = {reg: reg - 334 for reg in  [334, 335, 336, 337, 338, 340 ]}
+
+            # Process each register
+            for register, index in register_map.items():
+                if index < len(newdecoder):
+                    data[str(register)] = newdecoder[index]
+                else:
+                    _logger.warning(f"Register {register} expects index {index}, but newdecoder has length {len(newdecoder)}")
+
+            S339 = newdecoder[5] 
+            if S339 in ON_OFF_STATUS: data ["339"] = ON_OFF_STATUS[S339]
         
-        S339 = newdecoder[5]
-        if S339 in ON_OFF_STATUS: data ["339"] = ON_OFF_STATUS[S339]
-        
-        S340 = newdecoder[6]; data["340"] = S340
+        except IndexError as e:
+            _logger.error(f"IndexError: {e}")
+            return {}
+
+        except Exception as e:
+            _logger.error(f"Unexpected Error: {e}\n{traceback.format_exc()}")
+            return {}
 
         return data
 
+    # Settings data 5
     def read_modbus_setting_data_5(self) -> dict: #375 & 376
         """Read settings data 5"""
         setting_data_5 = self._read_holding_registers(unit=1, address=375, count=2)
         
         if setting_data_5.isError():
+            _logger.error("Failed to read Modbus registers for settings data")
             return {}
 
         data = {}
-        newdecoder = ModbusTcpClient.convert_from_registers(setting_data_5.registers, data_type=ModbusTcpClient.DATATYPE.INT16)
 
-        S375 = newdecoder[0]; data["375"] = S375; S376 = newdecoder[1]; data["376"] = S376
+        try:
+            # Ensure registers exist before converting
+            if not hasattr(setting_data_5, "registers") or not isinstance(setting_data_5.registers, list) or len(setting_data_5.registers) < 2:
+                _logger.error("Error: The setpoint data, did not received enough registers!")
+                return {}
+
+            newdecoder = ModbusTcpClient.convert_from_registers(setting_data_5.registers, data_type=ModbusTcpClient.DATATYPE.INT16)
+
+            # Ensure decoded data has enough elements
+            if len(newdecoder) < 2:
+                _logger.error("Error: Unexpected size of decoded data")
+                return {}
+            
+            # Map decoded values
+            register_map = {reg: reg - 375 for reg in [375, 376 ]}
+
+            # Process each register
+            for register, index in register_map.items():
+                if index < len(newdecoder):
+                    data[str(register)] = newdecoder[index]
+                else:
+                    _logger.warning(f"Register {register} expects index {index}, but newdecoder has length {len(newdecoder)}")
+
+        except IndexError as e:
+            _logger.error(f"IndexError: {e}")
+            return {}
+
+        except Exception as e:
+            _logger.error(f"Unexpected Error: {e}\n{traceback.format_exc()}")
+            return {}
 
         return data
 
+    # Settings data 6
     def read_modbus_setting_data_6(self) -> dict: #407 t/m 459
         """Read settings data 6"""
         setting_data_6 = self._read_holding_registers(unit=1, address=407, count=53)
-        
+
         if setting_data_6.isError():
+            _logger.error("Failed to read Modbus registers for settings data")
+            return {}
+        
+        data = {}
+        
+        try:
+            # Ensure registers exist before converting
+            if not hasattr(setting_data_6, "registers") or not isinstance(setting_data_6.registers, list) or len(setting_data_6.registers) < 53:
+                _logger.error("Error: The setpoint data, did not received enough registers!")
+                return {}
+
+            newdecoder = ModbusTcpClient.convert_from_registers(setting_data_6.registers, data_type=ModbusTcpClient.DATATYPE.INT16)
+
+            # Ensure decoded data has enough elements
+            if len(newdecoder) < 53:
+                _logger.error("Error: Unexpected size of decoded data")
+                return {}
+
+            # Map decoded values
+            register_map = {reg: reg - 407 for reg in [
+                407, 408, 409, 410, 411, 412, 413, 414,
+                415, 416, 417, 418, 419, 420, 421, 422,
+                423, 424, 425, 426, 427, 428, 429, 430,
+                431, 432, 433, 434, 435, 436, 437, 438,
+                439, 440, 441, 442, 443, 444, 445, 446,
+                447, 448, 449, 450, 451, 452, 453, 454,
+                455, 456, 457, 458, 459
+            ]}
+
+            # Process each register
+            for register, index in register_map.items():
+                if index < len(newdecoder):
+                    data[str(register)] = newdecoder[index]
+                else:
+                    _logger.warning(f"Register {register} expects index {index}, but newdecoder has length {len(newdecoder)}")
+
+        except IndexError as e:
+            _logger.error(f"IndexError: {e}")
             return {}
 
-        data = {}
-        newdecoder = ModbusTcpClient.convert_from_registers(setting_data_6.registers, data_type=ModbusTcpClient.DATATYPE.INT16)
-
-        S407 = newdecoder[0]; data["407"] = S407; S408 = newdecoder[1]; data["408"] = S408; S409 = newdecoder[2]; data["409"] = S409
-        S410 = newdecoder[3]; data["410"] = S410; S411 = newdecoder[4]; data["411"] = S411; S412 = newdecoder[5]; data["412"] = S412
-        S413 = newdecoder[6]; data["413"] = S413; S414 = newdecoder[7]; data["414"] = S414; S415 = newdecoder[8]; data["415"] = S415
-        S416 = newdecoder[9]; data["416"] = S416; S417 = newdecoder[10]; data["417"] = S417; S418 = newdecoder[11]; data["418"] = S418
-        S419 = newdecoder[12]; data["419"] = S419; S420 = newdecoder[13]; data["420"] = S420; S421 = newdecoder[14]; data["421"] = S421
-        S422 = newdecoder[15]; data["422"] = S422; S423 = newdecoder[16]; data["423"] = S423; S424 = newdecoder[17]; data["424"] = S424
-        S425 = newdecoder[18]; data["425"] = S425; S426 = newdecoder[19]; data["426"] = S426; S427 = newdecoder[20]; data["427"] = S427
-        S428 = newdecoder[21]; data["428"] = S428; S429 = newdecoder[22]; data["429"] = S429; S430 = newdecoder[23]; data["430"] = S430
-        S431 = newdecoder[24]; data["431"] = S431; S432 = newdecoder[25]; data["432"] = S432; S433 = newdecoder[26]; data["433"] = S433
-        S434 = newdecoder[27]; data["434"] = S434; S435 = newdecoder[28]; data["435"] = S435; S436 = newdecoder[29]; data["436"] = S436
-        S437 = newdecoder[30]; data["437"] = S437; S438 = newdecoder[31]; data["438"] = S438; S439 = newdecoder[32]; data["439"] = S439
-        S440 = newdecoder[33]; data["440"] = S440; S441 = newdecoder[34]; data["441"] = S441; S442 = newdecoder[35]; data["442"] = S442
-        S443 = newdecoder[36]; data["443"] = S443; S444 = newdecoder[37]; data["444"] = S444; S445 = newdecoder[38]; data["445"] = S445
-        S446 = newdecoder[39]; data["446"] = S446; S447 = newdecoder[40]; data["447"] = S447; S448 = newdecoder[41]; data["448"] = S448
-        S449 = newdecoder[42]; data["449"] = S449; S450 = newdecoder[43]; data["450"] = S450; S451 = newdecoder[44]; data["450"] = S451
-        S452 = newdecoder[45]; data["452"] = S452; S453 = newdecoder[46]; data["453"] = S453; S454 = newdecoder[47]; data["454"] = S454
-        S455 = newdecoder[48]; data["455"] = S455; S456 = newdecoder[49]; data["456"] = S456; S457 = newdecoder[50]; data["457"] = S457
-        S458 = newdecoder[51]; data["458"] = S458; S459 = newdecoder[52]; data["459"] = S459
+        except Exception as e:
+            _logger.error(f"Unexpected Error: {e}\n{traceback.format_exc()}")
+            return {}
 
         return data
 
+    # Realtime data
     def read_modbus_realtime_data(self) -> dict: # 499 t/m 539
         """Read the reatime sensor values"""
         realtime_data = self._read_holding_registers(unit=1, address=499, count=48)
 
         if realtime_data.isError():
+            _logger.error("Failed to read Modbus registers for realtime data")
             return {}
 
         data = {}
-        newdecoder = ModbusTcpClient.convert_from_registers(realtime_data.registers, data_type=ModbusTcpClient.DATATYPE.INT16)
 
-        mode = newdecoder[0]
-        _mode = []
-        _mode.extend(self.translate_mode_code_to_messages(mode, CURRENT_MODE.items()))
-        data["499"] = ", ".join(_mode).strip()[0:254]
-
-        S500 = newdecoder[1]
-        if S500 in LOGIN_STATUS: data["500"] = LOGIN_STATUS[S500]
-
-        S501 = newdecoder[2]
-        S502 = newdecoder[3]
-        versionleft = str(round(S501 * 0.01, 2)); data["501"] = "V" + versionleft + "-T" + str(S502)
-
-        S503 = newdecoder[4]; data["503"] = "V" + str(round(S503 * 0.01, 2))
-        S504 = newdecoder[5]; data["504"] = "V" + str(round(S504 * 0.01, 2))
-        S505 = newdecoder[6]; data["505"] = round(S505 * 0.1, 2)
-        S506 = newdecoder[7]; data["506"] = round(S506 * 0.1, 2)
-        S507 = newdecoder[8]; data["507"] = round(S507 * 0.1, 2)
-        S508 = newdecoder[9]; data["508"] = round(S508 * 0.1, 2)
-        S509 = newdecoder[10]; data["509"] = round(S509 * 0.1, 2)
-        S510 = newdecoder[11]; data["510"] = round(S510 * 0.1, 2)
-        S511 = newdecoder[12]; data["511"] = round(S511 * 0.1, 2)
-        S512 = newdecoder[13]; data["512"] = S512
-        S513 = newdecoder[14]; data["513"] = S513
- 
-        S514 = newdecoder[15]
-        if S514 in CURRENT_OPERATION_MODE: data["514"] = CURRENT_OPERATION_MODE[S514]
-
-        S515 = newdecoder[16]; data["515"] = S515
-        S516 = newdecoder[17]; data["516"] = S516
-        S517 = newdecoder[18]; data["517"] = round(S517 * 0.1, 2)
-        S518 = newdecoder[19]; data["518"] = round(S518 * 0.1, 2)
-        S519 = newdecoder[20]; data["519"] = round(S519 * 0.1, 2)
-        S520 = newdecoder[21]; data["520"] = round(S520 * 0.1, 2)
-        S521 = newdecoder[22]; data["521"] = round(S521 * 0.1, 2)
-        S522 = newdecoder[23]; data["522"] = round(S522 * 0.1, 2)
-        S523 = newdecoder[24]; data["523"] = round(S523 * 0.1, 2)
-        S524 = newdecoder[25]; data["524"] = round(S524 * 0.1, 2)
-        S525 = newdecoder[26]; data["525"] = round(S525 * 0.1, 2)
-        S526 = newdecoder[27]; data["526"] = S526
-        S527 = newdecoder[28]; data["527"] = S527
-        S528 = newdecoder[29]; data["528"] = round(S528 * 0.1, 2)
-        S529 = newdecoder[30]; data["529"] = S529
-
-        S530 = newdecoder[31]
-        if S530 in ON_OFF_STATUS: data["530"] = ON_OFF_STATUS[S530]
-
-        S531 = newdecoder[32]; data["531"] = round(S531 * 0.1, 2)
-
-        S532 = newdecoder[33]
-        if S532 in ON_OFF_STATUS: data["532"] = ON_OFF_STATUS[S532]
-
-        S533 = newdecoder[34]
-        if S533 in ON_OFF_STATUS: data["533"] = ON_OFF_STATUS[S533]
-
-        S534 = newdecoder[35]
-        if S534 in ON_OFF_STATUS: data["534"] = ON_OFF_STATUS[S534]
+        try:
+            # Ensure registers exist before converting
+            if not hasattr(realtime_data, "registers") or not isinstance(realtime_data.registers, list) or len(realtime_data.registers) < 48:
+                _logger.error("Error: The setpoint data, did not received enough registers!")
+                return {}
         
-        S535 = newdecoder[36]
-        if S535 in ON_OFF_STATUS: data["535"] = ON_OFF_STATUS[S535]
+            newdecoder = ModbusTcpClient.convert_from_registers(realtime_data.registers, data_type=ModbusTcpClient.DATATYPE.INT16)
 
-        S536 = newdecoder[37]
-        if S536 in ON_OFF_STATUS: data["536"] = ON_OFF_STATUS[S536]
+            # Ensure decoded data has enough elements
+            if len(newdecoder) < 48:
+                _logger.error("Error: Unexpected size of decoded data")
+                return {}
 
-        S537 = newdecoder[38]; data["537"] = round(S537 * 0.1)
-        S538 = newdecoder[39]; data["538"] = round(S538 * 0.1, 2)
-        S539 = newdecoder[40]; data["539"] = round(S539 * 0.1, 2)
-        
-        #P failure codes
-        P01 = (newdecoder[41] >> 0) & 1
-        if P01 in FAILURE_STATUS: data["P01"] = FAILURE_STATUS[P01]
-        P02 = (newdecoder[41] >> 1) & 1
-        if P02 in FAILURE_STATUS: data["P02"] = FAILURE_STATUS[P02]
-        P03 = (newdecoder[41] >> 2) & 1
-        if P03 in FAILURE_STATUS: data["P03"] = FAILURE_STATUS[P03]
-        P04 = (newdecoder[41] >> 3) & 1
-        if P04 in ACTIVE_STATUS: data["P04"] = ACTIVE_STATUS[P04]
-        P05 = (newdecoder[41] >> 4) & 1
-        if P05 in FAILURE_STATUS: data["P05"] = FAILURE_STATUS[P05]
-        P06 = (newdecoder[41] >> 5) & 1
-        if P06 in FAILURE_STATUS: data["P06"] = FAILURE_STATUS[P06]
-        P07 = (newdecoder[41] >> 6) & 1
-        if P07 in ACTIVE_STATUS: data["P07"] = ACTIVE_STATUS[P07]
-        P08 = (newdecoder[41] >> 7) & 1
-        if P08 in FAILURE_STATUS: data["P08"] = FAILURE_STATUS[P08]
-        P09 = (newdecoder[41] >> 8) & 1
-        if P09 in FAILURE_STATUS: data["P09"] = FAILURE_STATUS[P09]
-        P10 = (newdecoder[41] >> 9) & 1
-        if P10 in FAILURE_STATUS: data["P10"] = FAILURE_STATUS[P10]
-        P11 = (newdecoder[41] >> 10) & 1
-        if P11 in FAILURE_STATUS: data["P11"] = FAILURE_STATUS[P11]
-        P12 = (newdecoder[41] >> 11) & 1
-        if P12 in ACTIVE_STATUS: data["P12"] = ACTIVE_STATUS[P12]
-        P13 = (newdecoder[41] >> 12) & 1
-        if P13 in FAILURE_STATUS: data["P13"] = FAILURE_STATUS[P13]
+            # Check wich bit is active and return the current working mode
+            # bit messages
+            bit_messages = {
+                0: "DHW Standby",
+                1: "Heating Standby",
+                2: "Cooling Standby",
+                3: "DHW in progress",
+                5: "Cooling in progress",
+                6: "Heating in progress",
+                7: "Timer in progress"
+            }
+            
+            #modbus_register = newdecoder[0]
+            resultaat = self.get_highest_bit_message(newdecoder[0], bit_messages)
 
-        #F failure codes
-        F01 = (newdecoder[42] >> 5) & 1
-        if F01 in FAILURE_STATUS: data["F01"] = FAILURE_STATUS[F01]
-        F02 = (newdecoder[42] >> 6) & 1
-        if F02 in FAILURE_STATUS: data["F02"] = FAILURE_STATUS[F02]
-        F03 = (newdecoder[42] >> 7) & 1
-        if F03 in FAILURE_STATUS: data["F03"] = FAILURE_STATUS[F03]
-        F04 = (newdecoder[42] >> 8) & 1
-        if F04 in FAILURE_STATUS: data["F04"] = FAILURE_STATUS[F04]
-        F05 = (newdecoder[42] >> 9) & 1
-        if F05 in FAILURE_STATUS: data["F05"] = FAILURE_STATUS[F05]
-        F06 = (newdecoder[42] >> 10) & 1
-        if F06 in FAILURE_STATUS: data["F06"] = FAILURE_STATUS[F06]
-        F07 = (newdecoder[42] >> 11) & 1
-        if F07 in FAILURE_STATUS: data["F07"] = FAILURE_STATUS[F07]
-        F09 = (newdecoder[42] >> 13) & 1
-        if F09 in FAILURE_STATUS: data["F09"] = FAILURE_STATUS[F09]
-        F10 = (newdecoder[42] >> 14) & 1
-        if F10 in FAILURE_STATUS: data["F10"] = FAILURE_STATUS[F10]
-        F11 = (newdecoder[42] >> 15) & 1
-        if F11 in FAILURE_STATUS: data["F11"] = FAILURE_STATUS[F11]
-        F12 = (newdecoder[43] >> 0) & 1
-        if F12 in FAILURE_STATUS: data["F12"] = FAILURE_STATUS[F12]
-        F13 = (newdecoder[43] >> 1) & 1 
-        if F13 in FAILURE_STATUS: data["F13"] = FAILURE_STATUS[F13]
-        F14 = (newdecoder[43] >> 2) & 1 
-        if F14 in FAILURE_STATUS: data["F14"] = FAILURE_STATUS[F14]
-        F15 = (newdecoder[43] >> 3) & 1
-        if F15 in FAILURE_STATUS: data["F15"] = FAILURE_STATUS[F15]
-        F16 = (newdecoder[43] >> 4) & 1
-        if F16 in FAILURE_STATUS: data["F16"] = FAILURE_STATUS[F16]
-        F17 = (newdecoder[43] >> 5) & 1
-        if F17 in FAILURE_STATUS: data["F17"] = FAILURE_STATUS[F17]
-        F18 = (newdecoder[43] >> 6) & 1
-        if F18 in FAILURE_STATUS: data["F18"] = FAILURE_STATUS[F18]
-        F21 = (newdecoder[43] >> 7) & 1
-        if F21 in FAILURE_STATUS: data["F21"] = FAILURE_STATUS[F21]
-        F22 = (newdecoder[43] >> 8) & 1
-        if F22 in FAILURE_STATUS: data["F22"] = FAILURE_STATUS[F22]
-        F25 = (newdecoder[43] >> 9) & 1
-        if F25 in FAILURE_STATUS: data["F25"] = FAILURE_STATUS[F25]
-        F27 = (newdecoder[43] >> 10) & 1
-        if F27 in FAILURE_STATUS: data["F27"] = FAILURE_STATUS[F27]
-        F28 = (newdecoder[43] >> 11) & 1
-        if F28 in FAILURE_STATUS: data["F28"] = FAILURE_STATUS[F28]
-        F29 = (newdecoder[43] >> 12) & 1
-        if F29 in FAILURE_STATUS: data["F29"] = FAILURE_STATUS[F29]
-        F30 = (newdecoder[43] >> 13) & 1
-        if F30 in FAILURE_STATUS: data["F30"] = FAILURE_STATUS[F30]
+            if resultaat:
+                data["499"] = resultaat
+            else:   
+                data["499"] = ""
 
-        #E failure codes
-        E01 = (newdecoder[41] >> 13) & 1
-        if E01 in FAILURE_STATUS: data["E01"] = FAILURE_STATUS[E01]
-        E02 = (newdecoder[41] >> 14) & 1
-        if E02 in FAILURE_STATUS: data["E02"] = FAILURE_STATUS[E02]
-        E03 = (newdecoder[41] >> 15) & 1
-        if E03 in FAILURE_STATUS: data["E03"] = FAILURE_STATUS[E03]
-        E04 = (newdecoder[42] >> 0) & 1
-        if E04 in FAILURE_STATUS: data["E04"] = FAILURE_STATUS[E04]
-        E05 = (newdecoder[42] >> 1) & 1
-        if E05 in FAILURE_STATUS: data["E05"] = FAILURE_STATUS[E05]
-        E06 = (newdecoder[42] >> 2) & 1
-        if E06 in FAILURE_STATUS: data["E06"] = FAILURE_STATUS[E06]
-        E07 = (newdecoder[42] >> 3) & 1
-        if E07 in FAILURE_STATUS: data["E07"] = FAILURE_STATUS[E07]
-        E08 = (newdecoder[42] >> 4) & 1
-        if E08 in FAILURE_STATUS: data["E08"] = FAILURE_STATUS[E08]
+            # Define register mapping and scaling
+            register_keys = {
+                501: (2, 0.01, "V{}-T{}"), 502: (3, None, None),
+                503: (4, 0.01, "V{}"), 504: (5, 0.01, "V{}"),
+                505: (6, 0.1, None), 506: (7, 0.1, None),
+                507: (8, 0.1, None), 508: (9, 0.1, None),
+                509: (10, 0.1, None), 510: (11, 0.1, None),
+                511: (12, 0.1, None), 512: (13, None, None),
+                513: (14, None, None), 515: (16, None, None),
+                516: (17, None, None), 517: (18, 0.1, None),
+                518: (19, 0.1, None), 519: (20, 0.1, None),
+                520: (21, 0.1, None), 521: (22, 0.1, None),
+                522: (23, 0.1, None), 523: (24, 0.1, None),
+                524: (25, 0.1, None), 525: (26, 0.1, None),
+                526: (27, None, None), 527: (28, None, None),
+                528: (29, 0.1, None), 529: (30, None, None),
+                531: (32, 0.1, None), 537: (38, 0.1, None),
+                538: (39, 0.1, None), 539: (40, 0.1, None),
+                544: (45, None, None), 545: (46, None, None),
+                546: (47, None, None)
+            }
 
-        #S failure codes
-        S01 = (newdecoder[43] >> 14) & 1
-        if S01 in FAILURE_STATUS: data["S01"] = FAILURE_STATUS[S01]
-        S02 = (newdecoder[43] >> 15) & 1
-        if S02 in FAILURE_STATUS: data["S02"] = FAILURE_STATUS[S02]
-        S03 = (newdecoder[44] >> 0) & 1
-        if S03 in FAILURE_STATUS: data["S03"] = FAILURE_STATUS[S03]
-        S04 = (newdecoder[44] >> 1) & 1
-        if S04 in FAILURE_STATUS: data["S04"] = FAILURE_STATUS[S04]
-        S05 = (newdecoder[44] >> 2) & 1
-        if S05 in FAILURE_STATUS: data["S05"] = FAILURE_STATUS[S05]
-        S06 = (newdecoder[44] >> 3) & 1
-        if S06 in FAILURE_STATUS: data["S06"] = FAILURE_STATUS[S06]
-        S07 = (newdecoder[44] >> 4) & 1
-        if S07 in FAILURE_STATUS: data["S07"] = FAILURE_STATUS[S07]
-        S08 = (newdecoder[44] >> 5) & 1
-        if S08 in FAILURE_STATUS: data["S08"] = FAILURE_STATUS[S08]
-        S09 = (newdecoder[44] >> 6) & 1
-        if S09 in FAILURE_STATUS: data["S09"] = FAILURE_STATUS[S09]
-        S010 = (newdecoder[44] >> 7) & 1
-        if S010 in FAILURE_STATUS: data["S10"] = FAILURE_STATUS[S010]
-        S011 = (newdecoder[44] >> 8) & 1
-        if S011 in FAILURE_STATUS: data["S11"] = FAILURE_STATUS[S011]
-        S013 = (newdecoder[44] >> 9) & 1
-        if S013 in FAILURE_STATUS: data["S13"] = FAILURE_STATUS[S013]
+            # Process each register
+            for key, (index, scale, format_str) in register_keys.items():
+                value = newdecoder[index]
 
-        S544 = newdecoder[45]; data["544"] = S544
-        S545 = newdecoder[46]; data["545"] = S545 
-        S546 = newdecoder[47]; data["546"] = S546
-                 
+                if scale:
+                    value = round(value * scale, 2)
+
+                if format_str:
+                    if key == 501:  # Special formatting for key 501
+                        versionleft = str(value)
+                        data[str(key)] = format_str.format(versionleft, newdecoder[3])
+                    else:
+                        data[str(key)] = format_str.format(value)
+                else:
+                    data[str(key)] = value
+
+            # Compute `delta-T`
+            deltaT = newdecoder[6] - newdecoder[7]
+            data["delta-T"] = round(abs(deltaT) * 0.1, 2)
+
+            # define mapping for statuses
+            status = {
+                "ON_OFF_STATUS": { "530":31, "532":33, "533":34, "534":35, "535":36, "536":37 },
+                "CURRENT_OPERATION_MODE": { "514":15 },
+                "LOGIN_STATUS": { "500":1 }
+            }
+
+            # Loop through the dictionary to process statuses
+            for category, statuses in status.items():
+                for key, index in statuses.items():
+                    value = newdecoder[index]
+                    if value in globals()[category]:  
+                        data[key] = globals()[category][value]
+
+            # Define the bit positions for each category
+            status_bits = {
+                "FAILURE_STATUS": {
+                    "P01": (41, 0), "P02": (41, 1), "P03": (41, 2), "P05": (41, 4), "P06": (41, 5),
+                    "P08": (41, 7), "P09": (41, 8), "P10": (41, 9), "P11": (41, 10), "P13": (41, 12),
+                    "F01": (42, 5), "F02": (42, 6), "F03": (42, 7), "F04": (42, 8), "F05": (42, 9),
+                    "F06": (42, 10), "F07": (42, 11), "F09": (42, 13), "F10": (42, 14), "F11": (42, 15),
+                    "F12": (43, 0), "F13": (43, 1), "F14": (43, 2), "F15": (43, 3), "F16": (43, 4),
+                    "F17": (43, 5), "F18": (43, 6), "F21": (43, 7), "F22": (43, 8), "F25": (43, 9),
+                    "F27": (43, 10), "F28": (43, 11), "F29": (43, 12), "F30": (43, 13),
+                    "E01": (41, 13), "E02": (41, 14), "E03": (41, 15), "E04": (42, 0), "E05": (42, 1),
+                    "E06": (42, 2), "E07": (42, 3), "E08": (42, 4),
+                    "S01": (43, 14), "S02": (43, 15), "S03": (44, 0), "S04": (44, 1), "S05": (44, 2),
+                    "S06": (44, 3), "S07": (44, 4), "S08": (44, 5), "S09": (44, 6), "S10": (44, 7),
+                    "S11": (44, 8), "S13": (44, 9)
+                },
+                "ACTIVE_STATUS": {
+                    "P04": (41, 3), "P07": (41, 6), "P12": (41, 11)
+                }
+            }
+
+            # Loop through each category and process statuses
+            for category, failures in status_bits.items():
+                for key, (index, shift) in failures.items():
+                    value = (newdecoder[index] >> shift) & 1
+                    if value in globals()[category]:  # Dynamically access FAILURE_STATUS or ACTIVE_STATUS
+                        data[key] = globals()[category][value]
+
+
+        except IndexError as e:
+            _logger.error(f"IndexError: {e}")
+            return {}
+
+        except Exception as e:
+            _logger.error(f"Unexpected Error: {e}\n{traceback.format_exc()}")
+            return {}
+
         return data
-    
+
+    # Setpoint data
     def read_modbus_setpoint_data(self) -> dict: # 703 t/m 715
-        """Read the reatime setpoint values"""
- 
+        """Read the realtime setpoint values"""
+        
         setpoint_data = self._read_holding_registers(unit=1, address=703, count=13)
-    
+        
         if setpoint_data.isError():
+            _logger.error("Failed to read Modbus registers for setpoint data")
             return {}
 
         data = {}
-        newdecoder = ModbusTcpClient.convert_from_registers(setpoint_data.registers, data_type=ModbusTcpClient.DATATYPE.INT16)
 
-        S703 = newdecoder[0]; data["703"] = round(S703 * 0.1, 2)
-        S704 = newdecoder[1]; data["704"] = round(S704 * 0.1, 2)
-        S705 = newdecoder[2]; data["705"] = S705
-        S706 = newdecoder[3]; data["706"] = S706
-        S707 = newdecoder[4]; data["707"] = S707 
-        S708 = newdecoder[5]; data["708"] = S708
-        S709 = newdecoder[6]; data["709"] = S709 
-        S710 = newdecoder[7]; data["710"] = S710
-        S711 = newdecoder[8]; data["711"] = S711 
-        S712 = newdecoder[9]; data["712"] = S712
-        S713 = newdecoder[10]; data["713"] = S713
-        S714 = newdecoder[11]; data["714"] = round(S714 * 0.1, 2) 
-        S715 = newdecoder[12]; data["715"] = round(S715 * 0.1, 2) 
+        try:
+            # Ensure registers exist before converting
+            if not hasattr(setpoint_data, "registers") or not isinstance(setpoint_data.registers, list) or len(setpoint_data.registers) < 13:
+                _logger.error("Error: The setpoint data, did not received enough registers!")
+                return {}
+
+            newdecoder = ModbusTcpClient.convert_from_registers(setpoint_data.registers, data_type=ModbusTcpClient.DATATYPE.INT16)
+
+            # Ensure decoded data has enough elements
+            if len(newdecoder) < 13:
+                _logger.error("Error: Unexpected size of decoded data")
+                return {}
+
+            # Map decoded values
+            register_map = {
+                703: 0.1, 704: 0.1, 705: 1, 706: 1, 707: 1, 708: 1, 709: 1, 710: 1,
+                711: 1, 712: 1, 713: 1, 714: 0.1, 715: 0.1}
+
+            # Process each register
+            for i, (key, scale) in enumerate(register_map.items()):
+                value = newdecoder[i]
+                data[str(key)] = round(value * scale, 2)
+
+        except IndexError as e:
+            _logger.error(f"IndexError: {e}")
+            return {}
+
+        except Exception as e:
+            _logger.error(f"Unexpected Error: {e}\n{traceback.format_exc()}")
+            return {}
 
         return data
 
-    def translate_mode_code_to_messages(self, mode: int, current_mode: list) -> list:
-            messages = []
-            if not mode:
-                return messages
-
-            for code, mesg in current_mode:
-                if mode & code:
-                    messages.append(mesg)    
-            return messages
-    # write registers
-    def write_registers(self, address, payload) -> None:
-            """Write register."""
-            with self._lock:
-                self._client.write_registers(address, payload, slave=1)
+    # get highest bit
+    def get_highest_bit_message(self, register_value: int, bit_messages: dict) -> str:
+        highest_bit = max((bit for bit in bit_messages if register_value & (1 << bit)), default=None)
+        return bit_messages[highest_bit] if highest_bit is not None else ""
      
+    # write registers
+    def write_registers(self, address: int, payload: list[int] | int) -> None:
+        """Write register values safely."""
+        try:
+            with self._lock:
+                result = self._client.write_registers(address, payload, slave=1)
+                if result.isError():
+                    _LOGGER.error(f"Modbus write failed at address {address} with payload {payload}")
+                else:
+                    _LOGGER.info(f"Successfully wrote to register {address} with payload {payload}")
+        except Exception as e:
+            _LOGGER.error(f"Error writing to register {address}: {e}") 
