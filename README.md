@@ -1,7 +1,7 @@
 ![Version](https://img.shields.io/github/v/release/remmob/itho_amber 'Release')
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg 'Default Home Assistant community store')](https://github.com/custom-components/hacs)
-([https://img.shields.io/github/downloads/remmob/itho_amber/releases](https://img.shields.io/github/downloads/remmob/itho_amber/total))
-[![total issues](https://img.shields.io/github/issues/remmob/itho_amber 'total issues the integration')](https://github.com/remmob/itho_amber/issues)
+![Total Downloads](https://img.shields.io/github/downloads/remmob/itho_amber/total 'Total downloads across all releases')
+[![total issues](https://img.shields.io/github/issues/remmob/itho_amber 'Total issues')](https://github.com/remmob/itho_amber/issues)
 ![Stars](https://img.shields.io/github/stars/remmob/itho_amber)
 
 # Itho Daalderop Amber Heat pump integration
