@@ -16,6 +16,8 @@ views:
             name: CV-aanvoertemperatuur (Tuo)
           - entity: sensor.amber_water_inlet_temperature_tui
             name: CV-retourtemperatuur (Tui)
+          - entity: sensor.amber_dt_delta_t_water_outlet_tuo_water_inlet_tui
+            name: ΔT Aanvoer (TUO) - Retour (TUI)  
           - entity: sensor.amber_condenser_temperture_tup
             name: Condensatietemperatuur (Tup)
           - entity: sensor.amber_dhw_temperture_tw
