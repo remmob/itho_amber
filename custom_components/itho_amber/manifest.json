@@ -7,6 +7,5 @@
     "iot_class": "local_polling",
     "issue_tracker": "https://github.com/remmob/itho_amber/issues",
     "requirements": ["pymodbus>=3.9.0"],
-    "homeassistant": "2025.6.0",
     "version": "1.2.0" 
   }
