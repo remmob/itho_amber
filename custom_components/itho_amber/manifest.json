@@ -6,5 +6,9 @@
     "documentation": "https://github.com/remmob/itho_amber",
     "iot_class": "local_polling",
     "issue_tracker": "https://github.com/remmob/itho_amber/issues",
+<<<<<<< HEAD
+=======
+    "requirements": ["pymodbus>=3.8.3"],
+>>>>>>> 8fa5bd2612e503091297a037137a79be3f690a44
     "version": "1.2.0" 
   }
