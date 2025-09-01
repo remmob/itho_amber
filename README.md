@@ -9,7 +9,7 @@
  # Important
 
 Do not upgrade to Home Assistant 2025.9.x, as long this warning is visible!
-The pymodbus version has chnaged tot 3.11.x
+The pymodbus version has changed tot 3.11.x
 The integration does not support that version at this moment
 
 
