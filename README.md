@@ -6,7 +6,7 @@
 ![Stars](https://img.shields.io/github/stars/remmob/itho_amber)
 
 
-#Important
+ # Important
 
 Do not upgrade to Home Assistant 2025.9.x, as long this warning is visible!
 The pymodbus version has chnaged tot 3.11.x
