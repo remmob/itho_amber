@@ -5,6 +5,14 @@
 [![total issues](https://img.shields.io/github/issues/remmob/itho_amber 'Total issues')](https://github.com/remmob/itho_amber/issues)
 ![Stars](https://img.shields.io/github/stars/remmob/itho_amber)
 
+
+#Important
+
+Do not upgrade to Home Assistant 2025.9.x, as long this warning is visible!
+The pymodbus version has chnaged tot 3.11.x
+The integration does not support that version at this moment
+
+
 # Itho Daalderop Amber Heat pump integration
 Home Assistant integration for Itho Daalderop Amber heat pump.<br> 
 The Amber heat pump family contains 3 models.
