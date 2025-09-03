@@ -8,7 +8,7 @@ from datetime import timedelta
 
 from voluptuous.validators import Number
 from pymodbus.client import ModbusTcpClient
-from pymodbus.constants import Endian
+from pymodbus.payload import Endian
 from pymodbus.exceptions import ConnectionException, ModbusIOException
 
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
