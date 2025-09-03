@@ -8,7 +8,6 @@ from datetime import timedelta
 
 from voluptuous.validators import Number
 from pymodbus.client import ModbusTcpClient
-from pymodbus.constants import Endian
 from pymodbus.exceptions import ConnectionException, ModbusIOException
 
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -66,7 +65,7 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         """Read holding registers."""
         try:
             with self._lock:
-                return self._client.read_holding_registers(address=address, count=count, slave=unit)
+                return self._client.read_holding_registers(address=address, count=count, device_id=unit)
         except Exception as e:
             _LOGGER.error(f"Error while reading registers: {e}")
             return None
@@ -630,7 +629,7 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         """Write register values safely."""
         try:
             with self._lock:
-                result = self._client.write_registers(address, payload, slave=1)
+                result = self._client.write_registers(address, payload, device_id=1)
                 if result.isError():
                     _LOGGER.error(f"Modbus write failed at address {address} with payload {payload}")
                 else:
