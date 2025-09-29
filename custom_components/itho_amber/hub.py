@@ -466,9 +466,9 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
                 1: "Heating Standby",
                 2: "Cooling Standby",
                 3: "DHW in progress",
+                4: "Heating in progress",
                 5: "Cooling in progress",
-                6: "Heating in progress",
-                7: "Timer in progress"
+                6: "Timer in progress"
             }
             
             #modbus_register = newdecoder[0]
