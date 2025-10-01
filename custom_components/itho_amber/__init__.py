@@ -39,7 +39,7 @@ CONFIG_SCHEMA = vol.Schema(
 )
 
 PLATFORMS = ["sensor", "switch", "number", "select"]
-REQUIRED_VERSION = "2025.6.0"
+REQUIRED_VERSION = "2025.10.0"
 
 def check_homeassistant_version():
     if __version__ < REQUIRED_VERSION:
