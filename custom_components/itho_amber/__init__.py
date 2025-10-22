@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+from homeassistant.components.persistent_notification import async_create
+from homeassistant.helpers.translation import async_get_translations
+from importlib.metadata import version as get_version
+from packaging.version import Version
+
 import logging
 import asyncio
 
@@ -39,13 +44,7 @@ CONFIG_SCHEMA = vol.Schema(
 )
 
 PLATFORMS = ["sensor", "switch", "number", "select"]
-REQUIRED_VERSION = "2025.10.0"
-
-def check_homeassistant_version():
-    if __version__ < REQUIRED_VERSION:
-        raise ValueError(f"Deze integratie vereist Home Assistant {REQUIRED_VERSION} of hoger.")
-
-check_homeassistant_version()
+REQUIRED_VERSION = Version("2025.10.0")
 
 async def async_setup(_hass: HomeAssistant, _config: dict) -> bool:
     """Set up this integration using YAML is not supported."""
@@ -53,6 +52,29 @@ async def async_setup(_hass: HomeAssistant, _config: dict) -> bool:
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up an Amber Modbus integration using UI."""
+    # Check minimum version Home Assistant
+    try:
+        ha_version = await hass.async_add_executor_job(lambda: Version(get_version("homeassistant")))
+        if ha_version < REQUIRED_VERSION:
+            raise RuntimeError(
+                f"This integration requires Home Assistant {REQUIRED_VERSION} or higher. Detected version: {ha_version}"
+            )
+    except Exception as err:
+        # Toon melding in de UI
+        await async_create(
+            hass,
+            title="Itho Amber Integration Error",
+            message=(
+                f"🚫 **Itho Amber integration could not be loaded.**\n\n"
+                f"Required version: `{REQUIRED_VERSION}`\n"
+                f"Detected version: `{ha_version if 'ha_version' in locals() else 'unknown'}`\n\n"
+                f"Error: `{err}`\n\n"
+                "🔧 Please update Home Assistant to activate this integration."
+            ),
+            notification_id="itho_amber_version_blocked"
+        )
+        return False
+
     if DOMAIN not in hass.data:
         hass.data[DOMAIN] = {}
 
