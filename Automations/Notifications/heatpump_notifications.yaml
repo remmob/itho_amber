@@ -1,15 +1,15 @@
-#####################################################
-# Automation intergration file                      #
-# https://www.home-assistant.io/docs/automation/    #
-# 2025 Mischa Bommer                                #
-#                                                   #
-# Creation date: 26-03-2025                         #
-# last modification: 29-03-2025                     #
-#                                                   #
-# Automation to send (persist) notifications.       #
-# trigger: all error codes amber entities           #
-#                                                   #
-#####################################################
+###########################################################
+# Automation intergration file                            #
+# https://github.com/remmob/itho_amber/wiki/Automations   #
+# 2025 Mischa Bommer                                      #
+#                                                         #
+# Creation date: 26-03-2025                               #
+# last modification: 19-11-2025                           #
+#                                                         #
+# Automation to send (persist) notifications.             #
+# trigger: all error codes amber entities                 #
+#                                                         #
+##########################################################
 
 alias: Heatpump notificatons
 id: (YOUR_UNIQUE_ID_HERE)
@@ -67,8 +67,6 @@ trigger:
       - sensor.amber_s03_flow_switch_failure
       - sensor.amber_s04_communication_failure_indoor_unit
       - sensor.amber_s05_communication_failure_outdoor_unit
-      - sensor.amber_s06_water_outlet_to_low_in_cooling
-      - sensor.amber_s07_water_outlet_to_high_in_heating
       - sensor.amber_s08_defrost_failure
       - sensor.amber_s09_water_outlet_temp_low_during_defrost
       - sensor.amber_s10_flow_switch_failure
@@ -76,17 +74,28 @@ trigger:
       - sensor.amber_s13_failure_4_way_valve
     from: No Alarm
     to: ALARM
+    
+  - platform: state
+    entity_id:
+      - sensor.amber_s06_water_outlet_to_low_in_cooling
+      - sensor.amber_s07_water_outlet_to_high_in_heating
+    from: "No Alarm"
+    to: "ALARM"
+    for:
+      minutes: 5  
 condition: []
 action:
   - service: notify.mobile_app_(YOUR_DEVICE_HERE)
     data:
       message: >
         {{ trigger.from_state.attributes.friendly_name }}
-      title: Heatpump Malfunction
+      title: "Warmtepomp in storing!"
   - service: persistent_notification.create
     data:
       message: >
         {{ trigger.from_state.attributes.friendly_name }}
-      title: Heatpump Malfunction
-      notification_id: "Heatpump malfunction"
+      title: "Warmtepomp in storing!"
+      notification_id: Warmtepomp in storing"
 mode: single
+
+
