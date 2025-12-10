@@ -109,7 +109,7 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         setting_data_1 = self._read_holding_registers(unit=1, address=0, count=120)
         
         if setting_data_1.isError():
-            _logger.error("Failed to read Modbus registers for settings data")
+            _LOGGER.error("Failed to read Modbus registers for settings data")
             return {}
 
         data = {}
@@ -117,14 +117,14 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         try:
             # Ensure registers exist before converting
             if not hasattr(setting_data_1, "registers") or not isinstance(setting_data_1.registers, list) or len(setting_data_1.registers) < 120:
-                _logger.error("Error: The setpoint data, did not received enough registers!")
+                _LOGGER.error("Error: The setpoint data, did not received enough registers!")
                 return {}
 
             newdecoder = ModbusTcpClient.convert_from_registers(setting_data_1.registers, data_type=ModbusTcpClient.DATATYPE.INT16) 
 
             # Ensure decoded data has enough elements
             if len(newdecoder) < 120:
-                _logger.error("Error: Unexpected size of decoded data")
+                _LOGGER.error("Error: Unexpected size of decoded data")
                 return {}
             
             # Automatic calculation of register-index mapping
@@ -144,7 +144,7 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
                 if index < len(newdecoder):
                     data[str(register)] = newdecoder[index]
                 else:
-                    _logger.warning(f"Register {register} expects index {index}, but newdecoder has length {len(newdecoder)}")
+                    _LOGGER.warning(f"Register {register} expects index {index}, but newdecoder has length {len(newdecoder)}")
 
             # define mapping for statuses
             status = {
@@ -160,11 +160,11 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
                         data[key] = globals()[category][value]
 
         except IndexError as e:
-            _logger.error(f"IndexError: {e}")
+            _LOGGER.error(f"IndexError: {e}")
             return {}
 
         except Exception as e:
-            _logger.error(f"Unexpected Error: {e}\n{traceback.format_exc()}")
+            _LOGGER.error(f"Unexpected Error: {e}\n{traceback.format_exc()}")
             return {}    
 
         return data
@@ -175,7 +175,7 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         setting_data_2 = self._read_holding_registers(unit=1, address=120, count=100) 
         
         if setting_data_2.isError():
-            _logger.error("Failed to read Modbus registers for settings data")
+            _LOGGER.error("Failed to read Modbus registers for settings data")
             return {}
 
         data = {}
@@ -184,14 +184,14 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
             # Ensure registers exist before converting
             if not hasattr(setting_data_2, "registers") or not isinstance(setting_data_2.registers, list) or len(setting_data_2.registers) < 100:
 
-                _logger.error("Error: The setpoint data, did not received enough registers!")
+                _LOGGER.error("Error: The setpoint data, did not received enough registers!")
                 return {}
 
             newdecoder = ModbusTcpClient.convert_from_registers(setting_data_2.registers, data_type=ModbusTcpClient.DATATYPE.INT16)
 
             # Ensure decoded data has enough elements
             if len(newdecoder) < 100:
-                _logger.error("Error: Unexpected size of decoded data")
+                _LOGGER.error("Error: Unexpected size of decoded data")
                 return {}
 
             # Automatic calculation of register-index mapping
@@ -210,7 +210,7 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
                 if index < len(newdecoder):
                     data[str(register)] = newdecoder[index]
                 else:
-                    _logger.warning(f"Register {register} expects index {index}, but newdecoder has length {len(newdecoder)}")
+                    _LOGGER.warning(f"Register {register} expects index {index}, but newdecoder has length {len(newdecoder)}")
 
             # define mapping for statuses
             status = {
@@ -231,11 +231,11 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
 
 
         except IndexError as e:
-            _logger.error(f"IndexError: {e}")
+            _LOGGER.error(f"IndexError: {e}")
             return {}
 
         except Exception as e:
-            _logger.error(f"Unexpected Error: {e}\n{traceback.format_exc()}")
+            _LOGGER.error(f"Unexpected Error: {e}\n{traceback.format_exc()}")
             return {}
 
         return data
@@ -246,7 +246,7 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         setting_data_3 = self._read_holding_registers(unit=1, address=314, count=11)
         
         if setting_data_3.isError():
-            _logger.error("Failed to read Modbus registers for settings data")
+            _LOGGER.error("Failed to read Modbus registers for settings data")
             return {}
 
         data = {}
@@ -254,14 +254,14 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         try:
             # Ensure registers exist before converting
             if not hasattr(setting_data_3, "registers") or not isinstance(setting_data_3.registers, list) or len(setting_data_3.registers) < 11:
-                _logger.error("Error: The setpoint data, did not received enough registers!")
+                _LOGGER.error("Error: The setpoint data, did not received enough registers!")
                 return {}
 
             newdecoder = ModbusTcpClient.convert_from_registers(setting_data_3.registers, data_type=ModbusTcpClient.DATATYPE.INT16)
 
             # Ensure decoded data has enough elements
             if len(newdecoder) < 11:
-                _logger.error("Error: Unexpected size of decoded data")
+                _LOGGER.error("Error: Unexpected size of decoded data")
                 return {}
             
             # Map decoded values
@@ -272,7 +272,7 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
                 if index < len(newdecoder):
                     data[str(register)] = newdecoder[index]
                 else:
-                    _logger.warning(f"Register {register} expects index {index}, but newdecoder has length {len(newdecoder)}")
+                    _LOGGER.warning(f"Register {register} expects index {index}, but newdecoder has length {len(newdecoder)}")
 
             S323 = newdecoder[9]
             if S323 in ON_OFF_STATUS:
@@ -283,11 +283,11 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
                 data ["324"] = ON_OFF_STATUS[S324]    
 
         except IndexError as e:
-            _logger.error(f"IndexError: {e}")
+            _LOGGER.error(f"IndexError: {e}")
             return {}
 
         except Exception as e:
-            _logger.error(f"Unexpected Error: {e}\n{traceback.format_exc()}")
+            _LOGGER.error(f"Unexpected Error: {e}\n{traceback.format_exc()}")
             return {}
  
         return data
@@ -298,7 +298,7 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         setting_data_4 = self._read_holding_registers(unit=1, address=334, count=7)
         
         if setting_data_4.isError():
-            _logger.error("Failed to read Modbus registers for settings data")
+            _LOGGER.error("Failed to read Modbus registers for settings data")
             return {}
 
         data = {}
@@ -306,14 +306,14 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         try:
             # Ensure registers exist before converting
             if not hasattr(setting_data_4, "registers") or not isinstance(setting_data_4.registers, list) or len(setting_data_4.registers) < 7:
-                _logger.error("Error: The setpoint data, did not received enough registers!")
+                _LOGGER.error("Error: The setpoint data, did not received enough registers!")
                 return {}
                 
             newdecoder = ModbusTcpClient.convert_from_registers(setting_data_4.registers, data_type=ModbusTcpClient.DATATYPE.INT16)
             
             # Ensure decoded data has enough elements
             if len(newdecoder) < 7:
-                _logger.error("Error: Unexpected size of decoded data")
+                _LOGGER.error("Error: Unexpected size of decoded data")
                 return {}
             
             # Map decoded values
@@ -324,17 +324,17 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
                 if index < len(newdecoder):
                     data[str(register)] = newdecoder[index]
                 else:
-                    _logger.warning(f"Register {register} expects index {index}, but newdecoder has length {len(newdecoder)}")
+                    _LOGGER.warning(f"Register {register} expects index {index}, but newdecoder has length {len(newdecoder)}")
 
             S339 = newdecoder[5] 
             if S339 in ON_OFF_STATUS: data ["339"] = ON_OFF_STATUS[S339]
         
         except IndexError as e:
-            _logger.error(f"IndexError: {e}")
+            _LOGGER.error(f"IndexError: {e}")
             return {}
 
         except Exception as e:
-            _logger.error(f"Unexpected Error: {e}\n{traceback.format_exc()}")
+            _LOGGER.error(f"Unexpected Error: {e}\n{traceback.format_exc()}")
             return {}
 
         return data
@@ -345,7 +345,7 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         setting_data_5 = self._read_holding_registers(unit=1, address=375, count=2)
         
         if setting_data_5.isError():
-            _logger.error("Failed to read Modbus registers for settings data")
+            _LOGGER.error("Failed to read Modbus registers for settings data")
             return {}
 
         data = {}
@@ -353,14 +353,14 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         try:
             # Ensure registers exist before converting
             if not hasattr(setting_data_5, "registers") or not isinstance(setting_data_5.registers, list) or len(setting_data_5.registers) < 2:
-                _logger.error("Error: The setpoint data, did not received enough registers!")
+                _LOGGER.error("Error: The setpoint data, did not received enough registers!")
                 return {}
 
             newdecoder = ModbusTcpClient.convert_from_registers(setting_data_5.registers, data_type=ModbusTcpClient.DATATYPE.INT16)
 
             # Ensure decoded data has enough elements
             if len(newdecoder) < 2:
-                _logger.error("Error: Unexpected size of decoded data")
+                _LOGGER.error("Error: Unexpected size of decoded data")
                 return {}
             
             # Map decoded values
@@ -371,14 +371,14 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
                 if index < len(newdecoder):
                     data[str(register)] = newdecoder[index]
                 else:
-                    _logger.warning(f"Register {register} expects index {index}, but newdecoder has length {len(newdecoder)}")
+                    _LOGGER.warning(f"Register {register} expects index {index}, but newdecoder has length {len(newdecoder)}")
 
         except IndexError as e:
-            _logger.error(f"IndexError: {e}")
+            _LOGGER.error(f"IndexError: {e}")
             return {}
 
         except Exception as e:
-            _logger.error(f"Unexpected Error: {e}\n{traceback.format_exc()}")
+            _LOGGER.error(f"Unexpected Error: {e}\n{traceback.format_exc()}")
             return {}
 
         return data
@@ -389,7 +389,7 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         setting_data_6 = self._read_holding_registers(unit=1, address=407, count=53)
 
         if setting_data_6.isError():
-            _logger.error("Failed to read Modbus registers for settings data")
+            _LOGGER.error("Failed to read Modbus registers for settings data")
             return {}
         
         data = {}
@@ -397,14 +397,14 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         try:
             # Ensure registers exist before converting
             if not hasattr(setting_data_6, "registers") or not isinstance(setting_data_6.registers, list) or len(setting_data_6.registers) < 53:
-                _logger.error("Error: The setpoint data, did not received enough registers!")
+                _LOGGER.error("Error: The setpoint data, did not received enough registers!")
                 return {}
 
             newdecoder = ModbusTcpClient.convert_from_registers(setting_data_6.registers, data_type=ModbusTcpClient.DATATYPE.INT16)
 
             # Ensure decoded data has enough elements
             if len(newdecoder) < 53:
-                _logger.error("Error: Unexpected size of decoded data")
+                _LOGGER.error("Error: Unexpected size of decoded data")
                 return {}
 
             # Map decoded values
@@ -423,14 +423,14 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
                 if index < len(newdecoder):
                     data[str(register)] = newdecoder[index]
                 else:
-                    _logger.warning(f"Register {register} expects index {index}, but newdecoder has length {len(newdecoder)}")
+                    _LOGGER.warning(f"Register {register} expects index {index}, but newdecoder has length {len(newdecoder)}")
 
         except IndexError as e:
-            _logger.error(f"IndexError: {e}")
+            _LOGGER.error(f"IndexError: {e}")
             return {}
 
         except Exception as e:
-            _logger.error(f"Unexpected Error: {e}\n{traceback.format_exc()}")
+            _LOGGER.error(f"Unexpected Error: {e}\n{traceback.format_exc()}")
             return {}
 
         return data
@@ -441,7 +441,7 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         realtime_data = self._read_holding_registers(unit=1, address=499, count=48)
 
         if realtime_data.isError():
-            _logger.error("Failed to read Modbus registers for realtime data")
+            _LOGGER.error("Failed to read Modbus registers for realtime data")
             return {}
 
         data = {}
@@ -449,14 +449,14 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         try:
             # Ensure registers exist before converting
             if not hasattr(realtime_data, "registers") or not isinstance(realtime_data.registers, list) or len(realtime_data.registers) < 48:
-                _logger.error("Error: The setpoint data, did not received enough registers!")
+                _LOGGER.error("Error: The setpoint data, did not received enough registers!")
                 return {}
         
             newdecoder = ModbusTcpClient.convert_from_registers(realtime_data.registers, data_type=ModbusTcpClient.DATATYPE.INT16)
 
             # Ensure decoded data has enough elements
             if len(newdecoder) < 48:
-                _logger.error("Error: Unexpected size of decoded data")
+                _LOGGER.error("Error: Unexpected size of decoded data")
                 return {}
 
             # Check wich bit is active and return the current working mode
@@ -565,11 +565,11 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
 
 
         except IndexError as e:
-            _logger.error(f"IndexError: {e}")
+            _LOGGER.error(f"IndexError: {e}")
             return {}
 
         except Exception as e:
-            _logger.error(f"Unexpected Error: {e}\n{traceback.format_exc()}")
+            _LOGGER.error(f"Unexpected Error: {e}\n{traceback.format_exc()}")
             return {}
 
         return data
@@ -581,7 +581,7 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         setpoint_data = self._read_holding_registers(unit=1, address=703, count=13)
         
         if setpoint_data.isError():
-            _logger.error("Failed to read Modbus registers for setpoint data")
+            _LOGGER.error("Failed to read Modbus registers for setpoint data")
             return {}
 
         data = {}
@@ -589,14 +589,14 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         try:
             # Ensure registers exist before converting
             if not hasattr(setpoint_data, "registers") or not isinstance(setpoint_data.registers, list) or len(setpoint_data.registers) < 13:
-                _logger.error("Error: The setpoint data, did not received enough registers!")
+                _LOGGER.error("Error: The setpoint data, did not received enough registers!")
                 return {}
 
             newdecoder = ModbusTcpClient.convert_from_registers(setpoint_data.registers, data_type=ModbusTcpClient.DATATYPE.INT16)
 
             # Ensure decoded data has enough elements
             if len(newdecoder) < 13:
-                _logger.error("Error: Unexpected size of decoded data")
+                _LOGGER.error("Error: Unexpected size of decoded data")
                 return {}
 
             # Map decoded values
@@ -610,11 +610,11 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
                 data[str(key)] = round(value * scale, 2)
 
         except IndexError as e:
-            _logger.error(f"IndexError: {e}")
+            _LOGGER.error(f"IndexError: {e}")
             return {}
 
         except Exception as e:
-            _logger.error(f"Unexpected Error: {e}\n{traceback.format_exc()}")
+            _LOGGER.error(f"Unexpected Error: {e}\n{traceback.format_exc()}")
             return {}
 
         return data
