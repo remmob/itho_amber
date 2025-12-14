@@ -7,6 +7,7 @@ from homeassistant.helpers.translation import async_get_translations
 from importlib.metadata import version as get_version
 from packaging.version import Version
 
+import pymodbus
 import logging
 import asyncio
 
@@ -60,7 +61,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 f"This integration requires Home Assistant {REQUIRED_VERSION} or higher. Detected version: {ha_version}"
             )
     except Exception as err:
-        # Toon melding in de UI
         await async_create(
             hass,
             title="Itho Amber Integration Error",
@@ -84,6 +84,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     scan_interval = entry.data.get("scan_interval")
 
     _LOGGER.info("Setting up %s.%s", DOMAIN, name)
+    _LOGGER.debug(f"Used pymodbus version: {pymodbus.__version__}")
+    _LOGGER.debug(f"Required Home Assistant version: {REQUIRED_VERSION}")
+    _LOGGER.debug(f"Detected Home Assistant version: {ha_version}")
 
     if name in hass.data[DOMAIN]:
         _LOGGER.warning("Config entry %s is already set up!", name)
@@ -99,7 +102,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     _LOGGER.info("Integration setup completed successfully!")
     return True
-
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload Amber Modbus entry."""

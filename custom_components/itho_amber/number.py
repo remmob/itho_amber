@@ -92,4 +92,7 @@ class AmberNumber(CoordinatorEntity, NumberEntity):
     def set_native_value(self, value: int) -> None:
         """Set new value and write to modbus."""
         address = int(self.entity_description.key)
-        self._hub.write_registers(address, payload=ModbusTcpClient.convert_to_registers(int(value), data_type=ModbusTcpClient.DATATYPE.INT16, word_order="big"))
+        payload = ModbusTcpClient.convert_to_registers(int(value), 
+        data_type=ModbusTcpClient.DATATYPE.INT16, word_order="big")
+       
+        self._hub.write_registers(address, payload)
