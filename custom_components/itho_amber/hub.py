@@ -168,8 +168,8 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
     def read_modbus_realtime_data(self) -> dict:
         """Read realtime sensor values (499–546) and setpoint values (703–715)"""
         ranges = [
-            (499, 48),  # realtime block
-            (703, 13)   # setpoint block
+            (499, 48), 
+            (703, 13)   
         ]
         all_registers = []
 
@@ -188,14 +188,12 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
             time.sleep(0.1)
 
         try:
-            # Decode alle registers lineair
             newdecoder = ModbusTcpClient.convert_from_registers(
                 all_registers, data_type=ModbusTcpClient.DATATYPE.INT16
             )
 
             data = {}
 
-            # Bouw een lineaire mapping: registernummer → index in newdecoder
             register_map = {}
             idx = 0
             for start, count in ranges:
@@ -204,7 +202,6 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
                     register_map[reg] = idx
                     idx += 1
 
-            # --- Realtime statuswoord (register 499) via bit messages ---
             bit_messages = {
                 0: "DHW Standby",
                 1: "Heating Standby",
@@ -217,7 +214,6 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
             resultaat = self.get_highest_bit_message(newdecoder[register_map[499]], bit_messages)
             data["499"] = resultaat if resultaat else ""
 
-            # --- Realtime waarden met schaling/format ---
             realtime_keys = {
                 501: (register_map[501], 0.01, "V{}-T{}"),
                 502: (register_map[502], None, None),
@@ -268,11 +264,9 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
                 else:
                     data[str(key)] = val
 
-            # --- delta-T (505 - 506, beide 0.1 schaal) ---
             deltaT = newdecoder[register_map[505]] - newdecoder[register_map[506]]
             data["delta-T"] = round(abs(deltaT) * 0.1, 2)
 
-            # --- Realtime statussen via geïmporteerde dicts ---
             status = {
                 "ON_OFF_STATUS": {"530": register_map[530], "532": register_map[532],
                                 "533": register_map[533], "534": register_map[534],
