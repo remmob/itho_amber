@@ -3,8 +3,13 @@
 [![total issues](https://img.shields.io/github/issues/remmob/itho_amber 'Total issues')](https://github.com/remmob/itho_amber/issues)
 ![Stars](https://img.shields.io/github/stars/remmob/itho_amber)
 
-> 🚧 **Beta branch** — experimental features, not production ready.
+# 🚧 Beta Channel Announcement
 
+⚠️ You are currently viewing the **Beta branch** of this repository.  
+This branch contains experimental features and early fixes that may be unstable.  
+Use it only if you want to test new functionality and provide feedback before the stable release.
+
+---
 > ⚠️ **Modbus Gateway Parity Setting**
 >
 > With the latest software release for the *Itho Amber* by **Itho Daalderop**,  
