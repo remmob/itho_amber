@@ -9,7 +9,6 @@ from homeassistant.core import callback
 import homeassistant.util.dt as dt_util
 
 from pymodbus.client import ModbusTcpClient
-#from pymodbus.payload import BinaryPayloadBuilder
 
 from .const import (
     ATTR_MANUFACTURER,
@@ -135,7 +134,14 @@ class AmberSelectControlMode(CoordinatorEntity, SelectEntity):
     def select_option(self, option) -> None:
         address = int(self.entity_description.key)
         new_mode = get_key(self._options, option)
-        self._hub.write_registers(address, payload=ModbusTcpClient.convert_to_registers(int(new_mode), data_type=ModbusTcpClient.DATATYPE.INT16, word_order="big"))
+        self._hub.write_registers(
+            address,
+            payload=ModbusTcpClient.convert_to_registers(
+                int(new_mode),
+                data_type=ModbusTcpClient.DATATYPE.INT16,
+                word_order="big",
+            ),
+        )
 
 class AmberSelectWorkingMode(CoordinatorEntity, SelectEntity):
     """Representation of a Amber Modbus select."""
@@ -176,7 +182,14 @@ class AmberSelectWorkingMode(CoordinatorEntity, SelectEntity):
     def select_option(self, option) -> None:
         address = int(self.entity_description.key)
         new_mode = get_key(self._options, option)
-        self._hub.write_registers(address, payload=ModbusTcpClient.convert_to_registers(int(new_mode), data_type=ModbusTcpClient.DATATYPE.INT16, word_order="big"))
+        self._hub.write_registers(
+            address,
+            payload=ModbusTcpClient.convert_to_registers(
+                int(new_mode),
+                data_type=ModbusTcpClient.DATATYPE.INT16,
+                word_order="big",
+            ),
+        )
 
 class AmberSelectHWTBHMode(CoordinatorEntity, SelectEntity):
     """Representation of a Amber Modbus select."""
@@ -217,7 +230,14 @@ class AmberSelectHWTBHMode(CoordinatorEntity, SelectEntity):
     def select_option(self, option) -> None:
         address = int(self.entity_description.key)
         new_mode = get_key(self._options, option)
-        self._hub.write_registers(address, payload=ModbusTcpClient.convert_to_registers(int(new_mode), data_type=ModbusTcpClient.DATATYPE.INT16, word_order="big"))
+        self._hub.write_registers(
+            address,
+            payload=ModbusTcpClient.convert_to_registers(
+                int(new_mode),
+                data_type=ModbusTcpClient.DATATYPE.INT16,
+                word_order="big",
+            ),
+        )
 
 class AmberSelectP0PumpMode(CoordinatorEntity, SelectEntity):
     """Representation of a Amber Modbus select."""
@@ -258,45 +278,47 @@ class AmberSelectP0PumpMode(CoordinatorEntity, SelectEntity):
     def select_option(self, option) -> None:
         address = int(self.entity_description.key)
         new_mode = get_key(self._options, option)
-        self._hub.write_registers(address, payload=ModbusTcpClient.convert_to_registers(int(new_mode), data_type=ModbusTcpClient.DATATYPE.INT16, word_order="big"))
+        self._hub.write_registers(
+            address,
+            payload=ModbusTcpClient.convert_to_registers(
+                int(new_mode),
+                data_type=ModbusTcpClient.DATATYPE.INT16,
+                word_order="big",
+            ),
+        )
 
 class AmberSelectP0PumpSpeed(CoordinatorEntity, SelectEntity):
-    """Representation of a Amber Modbus Pump 0 speed select."""
-
-    def __init__(
-        self,
-        platform_name: str,
-        hub: AmberModbusHub,
-        device_info,
-        description: AmberModbusSelectEntityP0PumpSpeedDescription,
-    ):
-        """Initialize the select."""
+    def __init__(self, platform_name, hub, device_info, description):
         self._platform_name = platform_name
         self._attr_device_info = device_info
-        self.entity_description: AmberModbusSelectEntityP0PumpSpeedDescription = description
+        self.entity_description = description
         self._hub = hub
         self._options = PUMP_SPEED
         self._attr_options = list(self._options.values())
-
         super().__init__(coordinator=hub)
 
     @property
     def name(self):
-        """Return the name."""
         return f"{self._platform_name} {self.entity_description.name}"
 
     @property
     def unique_id(self) -> Optional[str]:
         return f"{self._platform_name}_{self.entity_description.key}"
-    
+
     @property
     def current_option(self):
-        value = self.coordinator.data[self.entity_description.key]
-        if value in PUMP_SPEED:
-            selected = PUMP_SPEED[value]
-        return selected
-    
+        value = self.coordinator.data.get(self.entity_description.key)
+        return PUMP_SPEED.get(value)
+   
     def select_option(self, option) -> None:
         address = int(self.entity_description.key)
         new_mode = get_key(self._options, option)
-        self._hub.write_registers(address, payload=ModbusTcpClient.convert_to_registers(int(new_mode), data_type=ModbusTcpClient.DATATYPE.INT16, word_order="big"))
+        
+        self._hub.write_registers(
+            address,
+            payload=ModbusTcpClient.convert_to_registers(
+                int(new_mode),
+                data_type=ModbusTcpClient.DATATYPE.INT16,
+                word_order="big",
+            ),
+        )
