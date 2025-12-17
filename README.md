@@ -1,4 +1,5 @@
 ![Version](https://img.shields.io/github/v/release/remmob/itho_amber 'Release')
+![Beta Release](https://img.shields.io/github/v/release/remmob/itho_amber?display_name=release&include_prereleases)
 [![hacs_badge](https://img.shields.io/badge/HACS-Default-orange.svg 'Default Home Assistant community store')](https://github.com/custom-components/hacs)
 [![total issues](https://img.shields.io/github/issues/remmob/itho_amber 'Total issues')](https://github.com/remmob/itho_amber/issues)
 ![Stars](https://img.shields.io/github/stars/remmob/itho_amber)
