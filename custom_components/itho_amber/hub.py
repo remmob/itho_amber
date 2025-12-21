@@ -105,13 +105,13 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
             resp = self._read_holding_registers(unit=1, address=start, count=count)
             if resp.isError() or not hasattr(resp, "registers"):
                 _LOGGER.error(f"Failed to read Modbus registers {start}-{start+count-1}")
-                return {}
+                return None
             _LOGGER.debug(
             f"Read {len(resp.registers)} of {count} registers from {start}-{start+count-1}"
             )    
-            if len(resp.registers) < count:
-                _LOGGER.error(f"Error: Expected {count} registers, got {len(resp.registers)}")
-                return {}
+            if len(resp.registers) < count: 
+                _LOGGER.error( f"Modbus read incomplete: expected {count} registers, got {len(resp.registers)}. Keeping previous values." )
+                return None
             all_registers.extend(resp.registers)
             time.sleep(0.2)
 
@@ -179,11 +179,11 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
             resp = self._read_holding_registers(unit=1, address=start, count=count)
             if resp.isError() or not hasattr(resp, "registers"):
                 _LOGGER.error(f"Failed to read Modbus registers {start}-{start+count-1}")
-                return {}
+                return None
             _LOGGER.debug(f"Read {len(resp.registers)} of {count} registers from {start}-{start+count-1}")
             if len(resp.registers) < count:
                 _LOGGER.error(f"Error: Expected {count} registers, got {len(resp.registers)}")
-                return {}
+                return None
             all_registers.extend(resp.registers)
             time.sleep(0.1)
 

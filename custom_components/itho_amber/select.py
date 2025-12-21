@@ -123,13 +123,28 @@ class AmberSelectControlMode(CoordinatorEntity, SelectEntity):
     @property
     def unique_id(self) -> Optional[str]:
         return f"{self._platform_name}_{self.entity_description.key}"
-    
+
     @property
     def current_option(self):
-        value = self.coordinator.data[self.entity_description.key]
+        """Return the currently selected option."""
+        value = self.coordinator.data.get(self.entity_description.key)
+
+        selected = None 
+
         if value in EXTERNAL_CONTROL:
             selected = EXTERNAL_CONTROL[value]
+        else:
+            if self._attr_options:
+                selected = self._attr_options[0]
+
         return selected
+
+    # @property
+    # def current_option(self):
+    #     value = self.coordinator.data[self.entity_description.key]
+    #     if value in EXTERNAL_CONTROL:
+    #         selected = EXTERNAL_CONTROL[value]
+    #     return selected
     
     def select_option(self, option) -> None:
         address = int(self.entity_description.key)
@@ -174,10 +189,25 @@ class AmberSelectWorkingMode(CoordinatorEntity, SelectEntity):
     
     @property
     def current_option(self):
-        value = self.coordinator.data[self.entity_description.key]
+        """Return the currently selected option."""
+        value = self.coordinator.data.get(self.entity_description.key)
+
+        selected = None
+
         if value in CURRENT_WORKING_MODE:
             selected = CURRENT_WORKING_MODE[value]
+        else:
+            if self._attr_options:
+                selected = self._attr_options[0]
+
         return selected
+
+    # @property
+    # def current_option(self):
+    #     value = self.coordinator.data[self.entity_description.key]
+    #     if value in CURRENT_WORKING_MODE:
+    #         selected = CURRENT_WORKING_MODE[value]
+    #     return selected
     
     def select_option(self, option) -> None:
         address = int(self.entity_description.key)
@@ -222,10 +252,25 @@ class AmberSelectHWTBHMode(CoordinatorEntity, SelectEntity):
     
     @property
     def current_option(self):
-        value = self.coordinator.data[self.entity_description.key]
+        """Return the currently selected option."""
+        value = self.coordinator.data.get(self.entity_description.key)
+
+        selected = None
+
         if value in HWTBH_PRIORITY_MODE:
             selected = HWTBH_PRIORITY_MODE[value]
+        else:
+            if self._attr_options:
+                selected = self._attr_options[0]
+
         return selected
+
+    # @property
+    # def current_option(self):
+    #     value = self.coordinator.data[self.entity_description.key]
+    #     if value in HWTBH_PRIORITY_MODE:
+    #         selected = HWTBH_PRIORITY_MODE[value]
+    #     return selected
     
     def select_option(self, option) -> None:
         address = int(self.entity_description.key)
@@ -270,10 +315,26 @@ class AmberSelectP0PumpMode(CoordinatorEntity, SelectEntity):
     
     @property
     def current_option(self):
-        value = self.coordinator.data[self.entity_description.key]
+        """Return the currently selected option."""
+        value = self.coordinator.data.get(self.entity_description.key)
+
+        selected = None
+
         if value in PUMP_P0_WORKING_MODE:
             selected = PUMP_P0_WORKING_MODE[value]
+        else:
+            if self._attr_options:
+                selected = self._attr_options[0]
+
         return selected
+
+    
+    # @property
+    # def current_option(self):
+    #     value = self.coordinator.data[self.entity_description.key]
+    #     if value in PUMP_P0_WORKING_MODE:
+    #         selected = PUMP_P0_WORKING_MODE[value]
+    #     return selected
     
     def select_option(self, option) -> None:
         address = int(self.entity_description.key)
@@ -307,8 +368,24 @@ class AmberSelectP0PumpSpeed(CoordinatorEntity, SelectEntity):
 
     @property
     def current_option(self):
+        """Return the currently selected option."""
         value = self.coordinator.data.get(self.entity_description.key)
-        return PUMP_SPEED.get(value)
+
+        selected = None
+
+        if value in PUMP_SPEED:
+            selected = PUMP_SPEED[value]
+        else:
+            if self._attr_options:
+                selected = self._attr_options[0]
+
+        return selected
+
+    
+    # @property
+    # def current_option(self):
+    #     value = self.coordinator.data.get(self.entity_description.key)
+    #     return PUMP_SPEED.get(value)
    
     def select_option(self, option) -> None:
         address = int(self.entity_description.key)
