@@ -70,26 +70,55 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
             return None
 
     async def _async_update_data(self) -> dict:
-        """Update Modbus data"""
+        """Update Modbus data safely."""
         data = {}
 
         try:
             # settings data
             settings = await self.hass.async_add_executor_job(self.read_modbus_setting_data)
-            data.update(settings)
+            if isinstance(settings, dict):
+                data.update(settings)
+            else:
+                _LOGGER.warning("Settings read returned None or invalid data, keeping previous values.")
 
             # realtime data
             realtime = await self.hass.async_add_executor_job(self.read_modbus_realtime_data)
-            data.update(realtime)
+            if isinstance(realtime, dict):
+                data.update(realtime)
+            else:
+                _LOGGER.warning("Realtime read returned None or invalid data, keeping previous values.")
 
             return data
 
         except ConnectionException:
             _LOGGER.error("Reading Modbus data failed! Device is unreachable.")
             return {}
+
         except Exception as e:
             _LOGGER.error(f"Unexpected error fetching Amber data: {e}")
             return {}
+
+    # async def _async_update_data(self) -> dict:
+    #     """Update Modbus data"""
+    #     data = {}
+
+    #     try:
+    #         # settings data
+    #         settings = await self.hass.async_add_executor_job(self.read_modbus_setting_data)
+    #         data.update(settings)
+
+    #         # realtime data
+    #         realtime = await self.hass.async_add_executor_job(self.read_modbus_realtime_data)
+    #         data.update(realtime)
+
+    #         return data
+
+    #     except ConnectionException:
+    #         _LOGGER.error("Reading Modbus data failed! Device is unreachable.")
+    #         return {}
+    #     except Exception as e:
+    #         _LOGGER.error(f"Unexpected error fetching Amber data: {e}")
+    #         return {}
     
     def read_modbus_setting_data(self) -> dict:
         """Read all settings data (0-219, plus extra ranges)"""
@@ -166,7 +195,7 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
             return {}
 
     def read_modbus_realtime_data(self) -> dict:
-        """Read realtime sensor values (499–546) and setpoint values (703–715)"""
+        """Read realtime sensor values """
         ranges = [
             (499, 48), 
             (703, 13)   
@@ -217,7 +246,7 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
             realtime_keys = {
                 501: (register_map[501], 0.01, "V{}-T{}"),
                 502: (register_map[502], None, None),
-                503: (register_map[503], 0.01, "V{}"),
+                503: (register_map[503], None, None),
                 504: (register_map[504], 0.01, "V{}"),
                 505: (register_map[505], 0.1, None),
                 506: (register_map[506], 0.1, None),
@@ -253,12 +282,20 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
             }
             for key, (index, scale, fmt) in realtime_keys.items():
                 val = newdecoder[index]
+
+                # Apply scale if present
                 if scale:
                     val = round(val * scale, 2)
+
                 if fmt:
                     if key == 501:
-                        # speciale format V{}-T{}: V komt uit 501, T uit 503 (index via register_map)
-                        data[str(key)] = fmt.format(str(val), newdecoder[register_map[503]])
+                        # Special format V{}-T{}:
+                        # V comes from register 501 (val)
+                        # T comes from register 503, but must be decoded (shift right 5 bits)
+                        t_raw = newdecoder[register_map[503]]
+                        t = t_raw >> 5  # decode upper bits to get the correct value (e.g. 121 >> 5 = 3)
+
+                        data[str(key)] = fmt.format(str(val), t)
                     else:
                         data[str(key)] = fmt.format(val)
                 else:
