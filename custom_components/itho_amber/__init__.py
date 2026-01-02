@@ -60,6 +60,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             raise RuntimeError(
                 f"This integration requires Home Assistant {REQUIRED_VERSION} or higher. Detected version: {ha_version}"
             )
+
     except Exception as err:
         await async_create(
             hass,
