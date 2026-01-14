@@ -42,7 +42,7 @@ trigger:
       - sensor.amber_f11_evporating_pressure_failure_ps
       - sensor.amber_f12_high_pressure_failure_pd
       - sensor.amber_f13_room_temperature_sensor_failure_tr
-      - sensor.amber_f14_failure_dhw_tank_sensor_tw
+      - sensor.amber_f14_failure_dhw_tank_temperature_sensor_tw
       - sensor.amber_f15_failure_temperature_control_sensor_tc
       - sensor.amber_f16_failure_outlet_temperature_sensor_tuo
       - sensor.amber_f17_failure_inlet_temperature_sensor_tui
