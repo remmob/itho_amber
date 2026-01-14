@@ -27,13 +27,13 @@ trigger:
       - sensor.amber_p08_gas_discharge_temp_sensor_protection
       - sensor.amber_p09_evaporator_coil_temp_sensor_protection
       - sensor.amber_p10_main_voltage_protection
-      - sensor.amber_p11_compressor_stop_ambient_temperture
+      - sensor.amber_p11_compressor_stop_ambient_temperature
       - sensor.amber_p12_frequency_limit_compressor
       - sensor.amber_p13_low_pressure_condensor_pressure_switch
-      - sensor.amber_f01_failure_ambient_temperture_sensor_ta
-      - sensor.amber_f02_failure_outdoor_temperture_sensor_tp
-      - sensor.amber_f03_failure_compressor_discharge_temperture_sensor_tp
-      - sensor.amber_f04_failure_compressor_suction_temperture_sensor_ts
+      - sensor.amber_f01_failure_ambient_temperature_sensor_ta
+      - sensor.amber_f02_failure_outdoor_temperature_sensor_tp
+      - sensor.amber_f03_failure_compressor_discharge_temperature_sensor_tp
+      - sensor.amber_f04_failure_compressor_suction_temperature_sensor_ts
       - sensor.amber_f05_failure_evporating_pressure_sensor_ps
       - sensor.amber_f06_failure_high_pressure_sensor_pd
       - sensor.amber_f07_failure_high_pressure_switch
@@ -41,14 +41,14 @@ trigger:
       - sensor.amber_f10_failure_b_fan_motor
       - sensor.amber_f11_evporating_pressure_failure_ps
       - sensor.amber_f12_high_pressure_failure_pd
-      - sensor.amber_f13_room_temp_sensor_failure_tr
+      - sensor.amber_f13_room_temperature_sensor_failure_tr
       - sensor.amber_f14_failure_dhw_tank_sensor_tw
-      - sensor.amber_f15_failure_temperture_control_sensor_tc
-      - sensor.amber_f16_failure_outlet_temperture_sensor_tuo
-      - sensor.amber_f17_failure_inlet_temperture_sensor_tui
-      - sensor.amber_f18_failure_coil_temperture_sensor
-      - sensor.amber_f21_failure_water_temperture_sensor_zone1_tv1
-      - sensor.amber_f22_failure_water_temperture_sensor_zone2_tv2
+      - sensor.amber_f15_failure_temperature_control_sensor_tc
+      - sensor.amber_f16_failure_outlet_temperature_sensor_tuo
+      - sensor.amber_f17_failure_inlet_temperature_sensor_tui
+      - sensor.amber_f18_failure_coil_temperature_sensor
+      - sensor.amber_f21_failure_water_temperature_sensor_zone1_tv1
+      - sensor.amber_f22_failure_water_temperature_sensor_zone2_tv2
       - sensor.amber_f25_communication_failure
       - sensor.amber_f27_failure_eeprom_indoor_unit
       - sensor.amber_f28_pwm_signal_failure_pomp_p0
@@ -67,13 +67,17 @@ trigger:
       - sensor.amber_s03_flow_switch_failure
       - sensor.amber_s04_communication_failure_indoor_unit
       - sensor.amber_s05_communication_failure_outdoor_unit
+      #- sensor.amber_s06_water_outlet_to_low_in_cooling
+      #- sensor.amber_s07_water_outlet_to_high_in_heating
       - sensor.amber_s08_defrost_failure
-      - sensor.amber_s09_water_outlet_temp_low_during_defrost
+      - sensor.amber_s09_water_outlet_temperature_low_during_defrost
       - sensor.amber_s10_flow_switch_failure
       - sensor.amber_s11_cooling_anti_freezing_protection
       - sensor.amber_s13_failure_4_way_valve
     from: No Alarm
     to: ALARM
+    for:  
+      minutes: 1
     
   - platform: state
     entity_id:
