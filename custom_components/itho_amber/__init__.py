@@ -19,6 +19,8 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PORT, CONF_SCAN_INTERVAL
 from homeassistant.core import HomeAssistant
 
+from .repairs import async_migrate_temperature_typo
+
 from .const import (
     DOMAIN,
     DEFAULT_NAME,
@@ -101,7 +103,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     for component in PLATFORMS:
         await hass.config_entries.async_forward_entry_setups(entry, [component])
 
+    # Perform migration automatically 
+    try:
+        changed = await async_migrate_temperature_typo(hass)
+        if changed:
+            _LOGGER.info("Automatic entity ID migration completed successfully.")
+    except Exception as err:
+        _LOGGER.error("Automatic entity ID migration failed: %s", err)
+
     _LOGGER.info("Integration setup completed successfully!")
+
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

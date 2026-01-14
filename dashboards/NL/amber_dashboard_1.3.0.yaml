@@ -1,0 +1,556 @@
+title: Warmtepomp
+icon: mdi:heat-pump
+views:
+  - type: masonry
+    path: info
+    title: Info
+    icon: mdi:information
+    cards:
+      - type: entities
+        entities:
+          - entity: sensor.amber_software_version
+            name: Amber software versie
+          - entity: sensor.amber_database_version
+            name: Amber database versie
+          - entity: sensor.amber_water_outlet_temperature_tuo
+            name: CV-aanvoertemperatuur (Tuo)
+          - entity: sensor.amber_water_inlet_temperature_tui
+            name: CV-retourtemperatuur (Tui)
+          - entity: sensor.amber_dt_delta_t_water_outlet_tuo_water_inlet_tui
+            name: ΔT Water outlet (Tuo) - Water inlet (Tui)
+          - entity: sensor.amber_condenser_temperature_tup
+            name: Condensatietemperatuur (Tup)
+          - entity: sensor.amber_dhw_temperature_tw
+            name: Tapwatertemperatuur (Tw)
+          - entity: sensor.amber_heating_cooling_watertemperature_tc
+            name: CV-aanvoertemperatuur verwarmen/koelen
+          - entity: sensor.amber_compressor_speed
+            name: Toerental compressor
+          - entity: sensor.amber_eev_opening
+            name: Stand expantieventiel
+          - entity: sensor.amber_1h_average_ambient_temperature
+            name: Gemiddelde buitentemperatuur laatste 1 uur
+          - entity: sensor.amber_4h_average_ambient_temperature
+            name: Gemiddelde buitentemperatuur laatste 4 uur
+          - entity: sensor.amber_24h_average_ambient_temperature
+            name: Gemiddelde buitentemperatuur laatste 24 uur
+          - entity: sensor.amber_compressor_high_pressure
+            name: Persgasdruk (Pd)
+          - entity: sensor.amber_compressor_low_pressure
+            name: Zuiggasdruk (Ps)
+          - entity: sensor.amber_compressor_discharge_temperature
+            name: Persgastemperatuur (Td)
+          - entity: sensor.amber_compressor_suction_temperature
+            name: Zuigastemperatuur (Ts)
+          - entity: sensor.amber_coil_temperature_tp
+            name: Verdampingstemperatuur (Tp)
+          - entity: sensor.amber_fan_speed
+            name: Fan speed
+          - entity: sensor.amber_running_current
+            name: Stroomsterkte buitenunit
+          - entity: sensor.amber_supply_voltage
+            name: Voedingspanning buitenunit
+        title: Menu 14 (realtime sensoren)
+        show_header_toggle: false
+      - type: entities
+        entities:
+          - entity: sensor.amber_software_version_outdoor_unit
+            name: Outdoor unit software version
+          - entity: sensor.amber_heating_cooling_zone_1_watertemperature_tv1
+            name: Heating/Cooling zone 1 watertemp -TV1
+          - entity: sensor.amber_heating_cooling_zone_2_watertemperature_tv2
+            name: Heating/Cooling zone 2 watertemp -TV2
+          - entity: sensor.amber_current_operating_mode
+            name: Current operatingmode
+          - entity: sensor.amber_current_working_mode
+            name: Current working mode
+          - entity: sensor.amber_ambient_temperature_ta
+            name: Buitentemperatuur (TA)
+          - entity: sensor.amber_defrost_status
+            name: Defrost status
+          - entity: sensor.amber_room_temperature_tr
+            name: Ruimte temperatuur (TR)
+          - entity: sensor.amber_flow_switch
+            name: Water flow switch
+          - entity: sensor.amber_electrical_utility_lock
+            name: Electrical utility lock signal
+          - entity: sensor.amber_external_cooling_signal_cs
+            name: Cooling external signal (CS)
+          - entity: sensor.amber_external_heating_signal_hs
+            name: Heating external signal (HS)
+          - entity: sensor.amber_external_high_demand_signal_hd
+            name: High demand control signal (HD)
+          - entity: sensor.amber_pwm_waterpump_signal
+            name: PWM signaal (pomp snelheid)
+          - entity: sensor.amber_mixing_valve_1_ouputsignal
+            name: Mixing valve 1 output 0-10V signal
+          - entity: sensor.amber_mixing_valve_2_ouputsignal
+            name: Mixing valve 2 output 0-10V signal
+          - entity: select.amber_working_mode
+            name: Working mode
+          - entity: switch.amber_amber_on_off
+            name: Amber ON/OFF (groene knop !)
+        show_header_toggle: false
+        title: Menu (extra sensoren)
+      - type: entities
+        entities:
+          - entity: sensor.amber_actual_setpoint_heating_zone_1
+            name: Huidig setpoint heating zone 1
+            icon: mdi:thermometer-water
+          - entity: sensor.amber_actual_setpoint_heating_zone_2
+            name: Huidig setpoint heating zone 2
+            icon: mdi:thermometer-water
+          - entity: sensor.amber_actual_setpoint_cooling_zone_1
+            name: Huidig setpoint cooling zone 1
+            icon: mdi:thermometer-water
+          - entity: sensor.amber_actual_setpoint_cooling_zone_2
+            name: Huidig setpoint cooling zone 2
+            icon: mdi:thermometer-water
+        title: Huidige setpoints
+  - type: masonry
+    path: settings
+    title: Settings
+    icon: mdi:cog-outline
+    cards:
+      - type: entities
+        entities:
+          - entity: number.amber_heating_and_cooling_stop
+          - entity: number.amber_heating_and_cooling_restart
+            name: ∆T herstart verwarmen/koelen
+          - entity: number.amber_compressor_speed_reduction
+            name: ∆T  Moduleren verwarmen/koelen
+          - entity: number.amber_cooling_1_setpoint
+            name: Aanvoertemperatuur koelen zonder koellijn 1
+          - entity: switch.amber_heat_curve_zone_1
+            name: Stooklijn zone 1
+          - entity: number.amber_heatcurve_outside_temperature_1
+            name: Stooklijn buitentemperatuur 1
+            icon: mdi:thermometer
+          - entity: number.amber_heatcurve_outside_temperature_2
+            name: Stooklijn buitentemperatuur 2
+            icon: mdi:thermometer
+          - entity: number.amber_heatcurve_outside_temperature_3
+            name: Stooklijn buitentemperatuur 3
+            icon: mdi:thermometer
+          - entity: number.amber_heatcurve_outside_temperature_4
+            name: Stooklijn buitentemperatuur 4
+            icon: mdi:thermometer
+          - entity: number.amber_heatcurve_outside_temperature_5
+            name: Stooklijn buitentemperatuur 5
+            icon: mdi:thermometer
+          - entity: number.amber_heatcurve_1_setpoint_1
+            name: Stooklijn zone 1 aanvoertemperatuur 1
+          - entity: number.amber_heatcurve_1_setpoint_2
+            name: Stooklijn zone 1 aanvoertemperatuur 2
+          - entity: number.amber_heatcurve_1_setpoint_3
+            name: Stooklijn zone 1 aanvoertemperatuur 3
+          - entity: number.amber_heatcurve_1_setpoint_4
+            name: Stooklijn zone 1 aanvoertemperatuur 4
+          - entity: number.amber_heatcurve_1_setpoint_5
+            name: Stooklijn zone 1 aanvoertemperatuur 5
+          - entity: switch.amber_heat_curve_1_correction
+          - entity: number.amber_ideal_room_temperature_in_heating
+            name: Ruimtetemperatuur Tr correctie stooklijn zone 1
+            icon: mdi:thermometer
+          - entity: number.amber_ideal_room_temperature_in_cooling
+            name: Ruimtetemperatuur Tr correctie koellijn zone 1
+            icon: mdi:thermometer
+          - entity: number.amber_zone_1_heating_setpoint
+            name: Aanvoertemperatuur verwarmen zonder stooklijn zone 1
+          - entity: number.amber_min_setpoint_setting_zone_1
+            name: Min. Aanvoertemperatuur zone 1
+          - entity: number.amber_max_setpoint_setting_zone_1
+            name: Max. Aanvoertemperatuur zone 1
+          - entity: sensor.amber_mixing_valve_zone_1
+            name: Mengregelafsluiter zone 1
+            icon: mdi:pipe-valve
+          - entity: sensor.amber_coolcurve_outside_temperature_1
+            name: Koellijn buitentemperatuur 1
+          - entity: sensor.amber_coolcurve_outside_temperature_2
+            name: Koellijn buitentemperatuur 2
+          - entity: sensor.amber_coolcurve_outside_temperature_3
+            name: Koellijn buitentemperatuur 3
+          - entity: sensor.amber_coolcurve_1_setpoint_1
+            name: Koellijn zone 1 aanvoertemperatuur 1
+          - entity: sensor.amber_coolcurve_1_setpoint_2
+            name: Koellijn zone 1 aanvoertemperatuur 2
+          - entity: sensor.amber_coolcurve_1_setpoint_3
+            name: Koellijn zone 1 aanvoertemperatuur 3
+          - entity: sensor.amber_coolcurve_zone_1
+            name: Koellijn zone 1
+        title: Menu 1 (temperatuur zone 1)
+        show_header_toggle: false
+        state_color: false
+      - type: entities
+        entities:
+          - entity: switch.amber_temperature_zone_2
+            name: Temperatuur zone 2
+          - entity: number.amber_zone_2_cooling_setpoint
+            name: Aanvoertemperatuur koelen zonder koellijn zone 2
+          - entity: number.amber_zone_2_heating_setpoint
+            name: Aanvoertemperatuur verwarmen zonder stooklijn zone 2
+          - entity: sensor.amber_mixing_valve_zone_2
+            name: Mengregelafsluiter zone 2
+          - entity: switch.amber_heat_curve_zone_2
+            name: Stooklijn zone 2
+          - entity: number.amber_heatcurve_2_setpoint_1
+            name: Stooklijn zone 2 aanvoertemperatuur 1
+          - entity: number.amber_heatcurve_2_setpoint_2
+            name: Stooklijn zone 2 aanvoertemperatuur 2
+          - entity: number.amber_heatcurve_2_setpoint_3
+            name: Stooklijn zone 2 aanvoertemperatuur 3
+          - entity: number.amber_heatcurve_2_setpoint_4
+            name: Stooklijn zone 2 aanvoertemperatuur 4
+          - entity: number.amber_heatcurve_2_setpoint_5
+            name: Stooklijn zone 2 aanvoertemperatuur 5
+          - entity: number.amber_max_setpoint_setting_zone_2
+            name: Max. aanvoertemperatuur zone 2
+          - entity: number.amber_min_setpoint_setting_zone_2
+            name: Min. Aanvoertemperatuur zone 2
+          - entity: sensor.amber_coolcurve_2_setpoint_1
+            name: Koellijn zone 2 aanvoertemperatuur 1
+          - entity: sensor.amber_coolcurve_2_setpoint_2
+            name: Koellijn zone 2 aanvoertemperatuur 2
+          - entity: sensor.amber_coolcurve_2_setpoint_3
+            name: Koellijn zone 2 aanvoertemperatuur 3
+          - entity: sensor.amber_coolcurve_zone_2
+            name: Koellijn zone 2
+        show_header_toggle: false
+        title: 'Menu 2 (temperatuur zone 2) '
+      - type: entities
+        entities:
+          - entity: number.amber_setpoint_dhw
+            name: Tapwater temperatuur
+          - entity: number.amber_restart_dhw
+            name: ∆T  herstart tapwater verwarmen
+          - entity: sensor.amber_shifting_priority_dhw
+            name: Prioriteitsregeling tapwater
+          - entity: sensor.amber_shifting_priority_dhw_temperature
+            name: Buitentemperatuur prioriteitsregeling
+          - entity: sensor.amber_min_heating_time_dhw
+            name: Min. Verwarmtijd tapwater prioriteitsregeling
+          - entity: sensor.amber_max_cv_heating_time_in_dhw_mode
+            name: Max . Verwarmtijd CV prioriteitsregeling
+          - entity: sensor.amber_shifting_priority_temperature_diff
+            name: Max. ∆T  aanvoertemperatuur prioriteitsregeling
+          - entity: sensor.amber_backup_heater_shifting_priority
+            name: Extern bijverwarmen prioriteitsregeling
+          - entity: switch.amber_dhw_eco_mode
+            name: Eco-stand tapwater
+          - entity: number.amber_outside_temperature_start_dhw_eco_mode
+            name: Min. Buitentemperatuur eco-stand tapwater
+          - entity: sensor.amber_max_dhw_setpoint_setting
+            name: Max. Tapwater temperatuur
+        title: Menu 3 (tapwater)
+        show_header_toggle: false
+      - type: entities
+        entities:
+          - entity: switch.amber_timer_dhw
+            name: Klokprogramma tapwater
+          - entity: sensor.amber_min_temperature_timer_dhw
+            name: Klokprogramma min temperatuur dhw
+          - entity: sensor.amber_min_temperature_setpoint_dhw
+            name: Min tapwater temperatuur
+          - entity: sensor.amber_restart_min_temperature_dhw
+            name: ∆T herstart min tapwater verwarmen buiten klokprog
+        title: Menu 4 (tapwater klokprogramma)
+      - type: entities
+        entities:
+          - entity: switch.amber_reduced_mode
+            name: Verlaging aanvoertemperatuur
+          - entity: number.amber_reduced_mode_setpoint
+            name: Temperatuur verlaging aanvoertemperatuur
+          - entity: switch.amber_timer_reduced_mode
+            name: Klokprogramma geluidsreductie
+          - entity: number.amber_reduced_mode_delta
+            name: Max ∆T aanvoertemperatuur geluidreductie
+        title: Menu 5 (geluidsreductie)
+        show_header_toggle: false
+      - type: entities
+        entities:
+          - entity: switch.amber_legionella_mode
+            name: Legionella preventie
+          - entity: sensor.amber_legionella_setpoint
+            name: Doel temperatuur
+          - entity: sensor.amber_legionella_duration
+            name: Min. tijdsduur doeltemperatuur
+          - entity: sensor.amber_legionella_max_elapsed_time
+            name: Max. tijdsduur legionella preventie
+        show_header_toggle: false
+        title: Menu 6 (legionella preventie)
+      - type: entities
+        entities:
+          - entity: switch.amber_vacation_mode
+            name: Vakantie mode tapwater
+          - entity: number.amber_restart_dhw_vacation_mode
+            name: Max ∆T verlaging tapwatertemperatuur
+          - entity: number.amber_room_temperature_vacation_mode
+            name: Ruimte temperatuur TR vakantie modus
+        title: Menu 7 (vakantie mode)
+      - type: entities
+        entities:
+          - entity: sensor.amber_system_login_status
+            name: Toegangsnivo
+          - entity: sensor.amber_timer_heating_and_cooling
+            name: Klokprogramma verwarmen/koelen
+        show_header_toggle: false
+        title: Menu 8 (gebruikers beheer)
+      - type: entities
+        entities:
+          - entity: switch.amber_dhw
+            name: Tapwater verwarmen
+          - entity: switch.amber_heating
+            name: Verwarmen
+          - entity: switch.amber_cooling
+            name: Koelen
+          - entity: sensor.amber_room_temperature_sensor
+            name: Verwarmen/koelen met ruimtetemperatuursensor TR
+          - entity: number.amber_duration_min_compressor_speed
+            name: Laagdraaitijd
+          - entity: select.amber_control_mode
+            name: Regelgedrag verwarmen/koelen
+          - entity: number.amber_outside_temperature_start_heating
+            name: Max Buitentemp. Vrijgave verwarming
+          - entity: number.amber_outside_temperature_start_cooling
+            name: Min Buitentemp. Vrijgave koelen
+        title: Menu 9 (systeem configuratie)
+        show_header_toggle: false
+      - type: entities
+        entities:
+          - entity: switch.amber_hwtbh
+            name: Extern bijverwarmen tapwater
+          - entity: select.amber_hwtbh_priority
+            name: Prioriteit bijverwarmen tapwater
+          - entity: number.amber_delay_hbh
+            name: Start vertraging bijstook CV
+          - entity: sensor.amber_temperature_rise_interval_hwtbh
+            name: Tijdsinterval tapwatertemperatuur ∆T=+1°C
+          - entity: switch.amber_allow_emergency_heating
+            name: Noodbedrijf hulpverwarming
+          - entity: switch.amber_block_external_heating
+            name: Blokkeren bijstook CV
+          - entity: sensor.amber_block_external_heating_on_outsidetemperature
+            name: Blokkeren bijstook CV temperatuurregeling
+          - entity: sensor.amber_setpoint_block_external_heating_on_outsidetemperature
+            name: Max buitentemperatuur blokkeren bijstook CV
+        title: Menu 10 (bijverwarming)
+        show_header_toggle: false
+      - type: entities
+        entities:
+          - entity: sensor.amber_p0_type
+            name: Type interne pomp
+          - entity: select.amber_p0_working_mode
+            name: Pompregeling (P0)
+          - entity: number.amber_p0_off_interval
+            name: Stoptijd pompregeling interval (p0)
+          - entity: number.amber_p0_run_interval
+            name: Draaitijd pompregeling interval (P0)
+          - entity: switch.amber_buffer_tank
+            name: Buffervat (verwarmen/koelen)
+          - entity: sensor.amber_p1_heating
+            name: Externe CV pomp (P1) verwarmen
+          - entity: sensor.amber_p1_cooling
+            name: Externe CV-pomp (P1) koelen
+          - entity: sensor.amber_p1_high_demand
+            name: CV-pomp (P1) hoge temperatuurvraag
+          - entity: sensor.amber_p2_heating
+            name: Externe CV-pomp (P2) verwarmen
+          - entity: sensor.amber_p2_cooling
+            name: Externe CV-pomp (P2) koelen
+          - entity: sensor.amber_p2_high_demand
+            name: CV-pomp (P2) hoge temperatuurvraag
+          - entity: select.amber_p0_speed_heating
+            name: Pompsnelheid verwarmen (P0)
+          - entity: select.amber_p0_speed_cooling
+            name: Pompsnelheid koelen (P0)
+          - entity: select.amber_p0_speed_dhw
+            name: Pompsnelheid tapwater (P0)
+        show_header_toggle: false
+        title: Menu 11 (circulatiepomp)
+      - type: entities
+        entities:
+          - entity: sensor.amber_cv_contact
+            name: CV-Ketel aansturing
+          - entity: sensor.amber_hbh_during_electrical_utility_lock
+            name: Blokkering bijverwarming hoogtarief
+          - entity: sensor.amber_p0_active_during_external_heating
+            name: Circulatie pomp (P0) tijdens overname
+          - entity: switch.amber_external_heating_allowed
+            name: Bivalent-alternatief
+          - entity: number.amber_outside_temperature_start_external_heating
+            name: Buitentemperatuur bivalentpunt
+          - entity: sensor.amber_sg_ready
+            name: SG ready
+          - entity: sensor.amber_sg_increase_setpoint_heating
+            name: SG ready verwarmen ∆T
+          - entity: sensor.amber_sg_increase_setpoint_dhw
+            name: SG ready tapwater verwarmen ∆T
+          - entity: sensor.amber_sg_decrease_setrpoint_cooling
+            name: SG ready koelen ∆T
+        title: Menu 12 (hybride)
+        show_header_toggle: false
+      - type: entities
+        entities:
+          - entity: number.amber_3way_valve_switching_time
+            name: Omlooptijd 3-wegklep
+          - entity: number.amber_3way_valve_power_mode
+            name: Voeding 3-wegklep (0=altijd)
+          - entity: sensor.amber_system_display_on_time
+            name: Display aan tijd
+          - entity: >-
+              sensor.amber_outside_start_temperature_frost_protection_first_stage
+            name: Buitentemperatuur start vorstbeveiliging 1e orde
+          - entity: >-
+              sensor.amber_outside_start_temperature_frost_protection_second_stage
+            name: Buitentemperatuur start vorstbeveiliging 2e orde
+          - entity: sensor.amber_outside_stop_temperature_frost_protection_first_stage
+            name: Buitentemperatuur einde vorstbeveiliging 2e orde
+          - entity: sensor.amber_water_start_temperature_frost_protection_second_stage
+            name: Watertemperatuur start vorstbeveiliging 2e orde
+          - entity: sensor.amber_water_stop_temperature_frost_protection_second_stage
+            name: Watertemperatuur einde vorstbeveiliging 2e orde
+          - entity: sensor.amber_mode_signal_output
+            name: Werkmodus relais schakeling GL
+          - entity: sensor.amber_mode_signal_type
+            name: Stand relais schakeling GL
+          - entity: sensor.amber_fan_speed_limit
+            name: Begrenzing toerental ventilator
+        title: Menu 13 (toestel configuratie)
+        show_header_toggle: false
+  - type: masonry
+    path: errorcodes
+    title: Error codes
+    icon: mdi:bell-alert-outline
+    cards:
+      - type: entities
+        entities:
+          - entity: sensor.amber_f01_failure_ambient_temperature_sensor_ta
+            name: F01 - Storing buiten temperatuur sensor (Ta)
+          - entity: sensor.amber_f02_failure_outdoor_temperature_sensor_tp
+            name: F02 - Storing verdamper temperatuur sensor (Tp)
+            secondary_info: none
+          - entity: >-
+              sensor.amber_f03_failure_compressor_discharge_temperature_sensor_tp
+            name: F03 - Storing persgas temperatuur sensor (Td)
+          - entity: sensor.amber_f04_failure_compressor_suction_temperature_sensor_ts
+            name: F04 - Storing zuiggas temperatuur sensor (Ts)
+          - entity: sensor.amber_f05_failure_evporating_pressure_sensor_ps
+            name: F05 - Storing lage druk sensor (Ps)
+          - entity: sensor.amber_f06_failure_high_pressure_sensor_pd
+            name: F06 - Storing condensatie druk sensor (Pd)
+          - entity: sensor.amber_f07_failure_high_pressure_switch
+            name: F07 - Storing hoge druk schakelaar
+          - entity: sensor.amber_f09_failure_a_fan_motor
+            name: F09 - Storing A ventilator motor
+          - entity: sensor.amber_f10_failure_b_fan_motor
+            name: F10 - Storing B ventilator motor
+          - entity: sensor.amber_f11_evporating_pressure_failure_ps
+            name: F11 - Lage druk storing (Ps)
+          - entity: sensor.amber_f12_high_pressure_failure_pd
+            name: F12 - Hoge druk storing (Pd)
+          - entity: sensor.amber_f13_room_temperature_sensor_failure_tr
+            name: F13 - Room Temp sensor failure (Tr)
+          - entity: sensor.amber_f14_failure_dhw_tank_temperature_sensor_tw
+            name: F14 - Storing tapwater sensor (Tw)
+          - entity: sensor.amber_f15_failure_temperature_control_sensor_tc
+            name: F15 - Failure temperture control sensor (Tc)
+          - entity: sensor.amber_f16_failure_outlet_temperature_sensor_tuo
+            name: F16 - Storing aanvoer temperatuur sensor (Tuo)
+          - entity: sensor.amber_f17_failure_inlet_temperature_sensor_tui
+            name: F17 - Storing retour temperatuur sensor (Tui)
+          - entity: sensor.amber_f18_failure_coil_temperature_sensor
+            name: F18 - Storing lamellenwisselaar temperatuur sensor (Tup)
+          - entity: sensor.amber_f21_failure_water_temperature_sensor_zone1_tv1
+            name: F21 - Storing temperatuur sensor menggroep 1 (Tv1)
+          - entity: sensor.amber_f22_failure_water_temperature_sensor_zone2_tv2
+            name: F22 - Storing temperatuur sensor menggroep 2 (Tv2)
+          - entity: sensor.amber_f25_communication_failure
+            name: F25 - Storing communicatie
+          - entity: sensor.amber_f27_failure_eeprom_indoor_unit
+            name: F27 - Storing EEPROM binnendeel
+          - entity: sensor.amber_f28_pwm_signal_failure_pomp_p0
+            name: F28 - Storing PWM signaal circulatie pomp P0
+          - entity: sensor.amber_f29_failure_3_way_valve_zone1
+            name: 'F29 - Storing mengventiel zone 1 '
+          - entity: sensor.amber_f30_failure_3_way_valve_zone2
+            name: F30 - Storing mengventiel zone 2
+        title: F - Foutcodes
+      - type: entities
+        entities:
+          - entity: sensor.amber_e01_comm_failure_lcd_indoorunit
+            name: E01 - Communicatie storing tussen LCD en binnenunit
+          - entity: sensor.amber_e02_failure_outdoor_pcb_compressor_inverter
+            name: >-
+              E02 - Communicatie storing tussen buitenunit PCB en compressor
+              inverter
+          - entity: sensor.amber_e03_power_failure_compressor
+            name: E03 - Storing voeding spanning compressor
+          - entity: sensor.amber_e04_overcurrent_protection_compressor
+            name: E04 - Overbelasting stroom compressor
+          - entity: sensor.amber_e05_compressor_driver_failure
+            name: E05 - Storing compressor aandrijving
+          - entity: sensor.amber_e06_vdc_unit_failure
+            name: E06 - Storing VDC module
+          - entity: sensor.amber_e07_ac_current_failure
+            name: 'E07 - Storing wisselstroom '
+          - entity: sensor.amber_e08_eeprom_failure_oudoor_unit
+            name: E08 - Storing EEPROM buitenunit
+        title: E - Foutcodes
+        show_header_toggle: false
+      - type: entities
+        entities:
+          - entity: sensor.amber_s01_cooling_anti_freezing_protection
+            name: S01 - Antivriesbescherming koeling buitendeel
+          - entity: sensor.amber_s02_low_flow_warning
+            name: S02 - Waterdebiet te laag
+          - entity: sensor.amber_s03_flow_switch_failure
+            name: S03 - Storing debiet schakelaar
+          - entity: sensor.amber_s04_communication_failure_indoor_unit
+            name: S04 - Communicatie fout binnen unit
+          - entity: sensor.amber_s05_communication_failure_outdoor_unit
+            name: S05 - Communicatie fout buiten unit
+          - entity: sensor.amber_s06_water_outlet_to_low_in_cooling
+            name: S06 - Aanvoer water temperatuur te laag in koelen
+          - entity: sensor.amber_s07_water_outlet_to_high_in_heating
+            name: S07 - Aanvoer water temperatuur te hoog in verwarmen
+          - entity: sensor.amber_s08_defrost_failure
+            name: S08 - Deforst failure (3x)
+          - entity: sensor.amber_s09_water_outlet_temperature_low_during_defrost
+            name: S09 - Aanvoer temperatuur tijdens defrost te laag
+          - entity: sensor.amber_s10_flow_switch_failure
+            name: S10 - Water debiet te laag (3x)
+          - entity: sensor.amber_s11_cooling_anti_freezing_protection
+            name: S11 - Storing vorst beveiliging in koelbedrijf
+          - entity: sensor.amber_s13_failure_4_way_valve
+            name: S13 - Storing 4-weg klep
+        title: S - Foutcodes
+        show_header_toggle: false
+      - type: entities
+        entities:
+          - entity: sensor.amber_p01_main_line_current_protection
+            name: P01 - Stroombeveiliging hoofdvoeding
+          - entity: sensor.amber_p02_compressor_phase_current_protection
+            name: P02 - Stroombeveiliging compressor
+          - entity: sensor.amber_p03_ipm_module_protection
+            name: P03 - Hoge temperatuurbeveiliging inverter PCB
+          - entity: sensor.amber_p04_compresor_oil_return_protection
+            name: P04 - Terugstroom beveiliging comperssor olie
+          - entity: sensor.amber_p05_high_pressure_refrigerant_circuit
+            name: P05 - Te hoge druk koudemiddel circuit
+          - entity: sensor.amber_p06_very_high_pressure_refrigerant_circuit
+            name: P06 - Erg hoge druk koudemiddel circuit
+          - entity: sensor.amber_p07_pre_heat_compressor
+            name: P07 - Voorverwarming compressor
+          - entity: sensor.amber_p08_gas_discharge_temp_sensor_protection
+            name: P08 - Persgas-temperatuur te hoog
+          - entity: sensor.amber_p09_evaporator_coil_temp_sensor_protection
+            name: 'P09 - Temperatuur sensor verdamper '
+          - entity: sensor.amber_p10_main_voltage_protection
+            name: P10 - Netspanning beveiliging
+          - entity: sensor.amber_p11_compressor_stop_ambient_temperature
+            name: P11 - Compressor stop buitentemperatuur
+          - entity: sensor.amber_p12_frequency_limit_compressor
+            name: P12 - Toerental begrensing compressor
+          - entity: sensor.amber_p13_low_pressure_condensor_pressure_switch
+            name: P13 - Lagedruk condensor druk schakelaar
+        title: P - Foutcodes

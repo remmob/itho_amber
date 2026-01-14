@@ -3,13 +3,16 @@ import re
 
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.const import (CONF_HOST, CONF_NAME, CONF_PORT,
-                                 CONF_SCAN_INTERVAL)
+from homeassistant.const import (
+    CONF_HOST,
+    CONF_NAME,
+    CONF_PORT,
+    CONF_SCAN_INTERVAL,
+)
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.selector import TextSelector
 
 from .const import DEFAULT_NAME, DEFAULT_PORT, DEFAULT_SCAN_INTERVAL, DOMAIN
-from .hub import AmberModbusHub
+from .repairs import async_migrate_temperature_typo
 
 
 DATA_SCHEMA = vol.Schema(
@@ -21,36 +24,36 @@ DATA_SCHEMA = vol.Schema(
     }
 )
 
+
 def host_valid(host):
     """Return True if hostname or IP address is valid."""
     try:
-        if ipaddress.ip_address(host).version == (4 or 6):
+        if ipaddress.ip_address(host).version in (4, 6):
             return True
     except ValueError:
         disallowed = re.compile(r"[^a-zA-Z\d\-]")
         return all(x and not disallowed.search(x) for x in host.split("."))
 
+
 @callback
 def amber_modbus_entries(hass: HomeAssistant):
     """Return the hosts already configured."""
-    return set(
-        entry.data[CONF_HOST] for entry in hass.config_entries.async_entries(DOMAIN)
-    )
+    return {
+        entry.data[CONF_HOST]
+        for entry in hass.config_entries.async_entries(DOMAIN)
+    }
+
 
 class AmberModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Amber Modbus configflow."""
+    """Handle the initial setup flow."""
 
     VERSION = 1
     CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_POLL
 
     def _host_in_configuration_exists(self, host) -> bool:
-        """Return True if host exists in configuration."""
-        if host in amber_modbus_entries(self.hass):
-            return True
-        return False
+        return host in amber_modbus_entries(self.hass)
 
     async def async_step_user(self, user_input=None):
-        """Handle the initial step."""
         errors = {}
 
         if user_input is not None:
@@ -58,44 +61,39 @@ class AmberModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
             if self._host_in_configuration_exists(host):
                 errors[CONF_HOST] = "already_configured"
-            elif not host_valid(user_input[CONF_HOST]):
-                errors[CONF_HOST] = "invalid host IP"
+            elif not host_valid(host):
+                errors[CONF_HOST] = "invalid_host"
             else:
-                await self.async_set_unique_id(user_input[CONF_HOST])
+                await self.async_set_unique_id(host)
                 self._abort_if_unique_id_configured()
                 return self.async_create_entry(
-                    title=user_input[CONF_NAME], data=user_input
+                    title=user_input[CONF_NAME],
+                    data=user_input,
                 )
 
         return self.async_show_form(
-            step_id="user", data_schema=DATA_SCHEMA, errors=errors
+            step_id="user",
+            data_schema=DATA_SCHEMA,
+            errors=errors,
         )
 
-    # async def async_step_reconfigure(self, user_input=None):
-    #     """Handle reconfiguration of the integration."""
-    #     errors = {}
 
-    #     if user_input:
-    #         host = user_input[CONF_HOST]
-    #         port = user_input[CONF_PORT]
-    #         scan_interval = user_input[CONF_SCAN_INTERVAL]
+# class AmberOptionsFlowHandler(config_entries.OptionsFlow):
+#     """Handle the migration confirmation flow."""
 
-    #         # Validatie van de nieuwe configuratie
-    #         hub = AmberModbusHub(self.hass, "Test", host, port, scan_interval)
-    #         try:
-    #             await hub.async_test_connection()
-    #         except Exception:
-    #             errors["base"] = "cannot_connect"
-    #         else:
-    #             entry = self._get_reconfigure_entry()
-    #             return self.async_update_reload_and_abort(entry, data_updates=user_input)
+#     def __init__(self, config_entry):
+#         self.config_entry = config_entry
 
-    #     return self.async_show_form(
-    #         step_id="reconfigure",
-    #         data_schema=vol.Schema({
-    #             vol.Required(CONF_HOST, default=self.config_entry.data[CONF_HOST]): TextSelector(),
-    #             vol.Required(CONF_PORT, default=self.config_entry.data[CONF_PORT]): TextSelector(),
-    #             vol.Optional(CONF_SCAN_INTERVAL, default=self.config_entry.data[CONF_SCAN_INTERVAL]): vol.Coerce(int),
-    #         }),
-    #         errors=errors,
-    #     )
+#     async def async_step_init(self, user_input=None):
+#         if user_input is not None:
+#             await async_migrate_temperature_typo(self.hass)
+#             return self.async_create_entry(
+#                 title="Migration completed",
+#                 data={},
+#             )
+
+#         return self.async_show_form(
+#             step_id="init",
+#             data_schema=None,
+#             description="This will rename incorrect entity IDs and preserve history.",
+#         )
