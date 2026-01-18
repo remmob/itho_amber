@@ -151,7 +151,7 @@ class AmberSelectControlMode(CoordinatorEntity, SelectEntity):
         new_mode = get_key(self._options, option)
         self._hub.write_registers(
             address,
-            payload=ModbusTcpClient.convert_to_registers(
+            ModbusTcpClient.convert_to_registers(
                 int(new_mode),
                 data_type=ModbusTcpClient.DATATYPE.INT16,
                 word_order="big",
@@ -214,7 +214,7 @@ class AmberSelectWorkingMode(CoordinatorEntity, SelectEntity):
         new_mode = get_key(self._options, option)
         self._hub.write_registers(
             address,
-            payload=ModbusTcpClient.convert_to_registers(
+            ModbusTcpClient.convert_to_registers(
                 int(new_mode),
                 data_type=ModbusTcpClient.DATATYPE.INT16,
                 word_order="big",
@@ -277,7 +277,7 @@ class AmberSelectHWTBHMode(CoordinatorEntity, SelectEntity):
         new_mode = get_key(self._options, option)
         self._hub.write_registers(
             address,
-            payload=ModbusTcpClient.convert_to_registers(
+            ModbusTcpClient.convert_to_registers(
                 int(new_mode),
                 data_type=ModbusTcpClient.DATATYPE.INT16,
                 word_order="big",
@@ -341,7 +341,7 @@ class AmberSelectP0PumpMode(CoordinatorEntity, SelectEntity):
         new_mode = get_key(self._options, option)
         self._hub.write_registers(
             address,
-            payload=ModbusTcpClient.convert_to_registers(
+            ModbusTcpClient.convert_to_registers(
                 int(new_mode),
                 data_type=ModbusTcpClient.DATATYPE.INT16,
                 word_order="big",
@@ -393,7 +393,7 @@ class AmberSelectP0PumpSpeed(CoordinatorEntity, SelectEntity):
         
         self._hub.write_registers(
             address,
-            payload=ModbusTcpClient.convert_to_registers(
+            ModbusTcpClient.convert_to_registers(
                 int(new_mode),
                 data_type=ModbusTcpClient.DATATYPE.INT16,
                 word_order="big",

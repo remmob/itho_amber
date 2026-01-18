@@ -25,9 +25,32 @@ from .const import (
     DOMAIN,
     DEFAULT_NAME,
     DEFAULT_SCAN_INTERVAL,
+    # New notification config
+    CONF_NOTIFY_ALARMS_MOBILE,
+    CONF_NOTIFY_ALARMS_PERSISTENT,
+    CONF_NOTIFY_ALARMS_SERVICES,
+    CONF_ALARM_NOTIFICATION_TITLE,
+    CONF_ALARM_DELAY,
+    CONF_NOTIFY_CONNECTION_ERRORS_MOBILE,
+    CONF_NOTIFY_CONNECTION_ERRORS_PERSISTENT,
+    CONF_NOTIFY_CONNECTION_ERRORS_SERVICES,
+    CONF_CONNECTION_ERROR_NOTIFICATION_TITLE,
+    CONF_CONNECTION_ERROR_DELAY,
+    # Defaults
+    DEFAULT_NOTIFY_ALARMS_MOBILE,
+    DEFAULT_NOTIFY_ALARMS_PERSISTENT,
+    DEFAULT_NOTIFY_ALARMS_SERVICES,
+    DEFAULT_ALARM_NOTIFICATION_TITLE,
+    DEFAULT_ALARM_DELAY,
+    DEFAULT_NOTIFY_CONNECTION_ERRORS_MOBILE,
+    DEFAULT_NOTIFY_CONNECTION_ERRORS_PERSISTENT,
+    DEFAULT_NOTIFY_CONNECTION_ERRORS_SERVICES,
+    DEFAULT_CONNECTION_ERROR_NOTIFICATION_TITLE,
+    DEFAULT_CONNECTION_ERROR_DELAY,
 )
 
 from .hub import AmberModbusHub
+from .alarm_monitor import AlarmMonitor
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -85,6 +108,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     host = entry.data.get("host")
     port = entry.data.get("port")
     scan_interval = entry.data.get("scan_interval")
+    
+    # Connection error notification settings
+    notify_connection_errors_mobile = entry.data.get(CONF_NOTIFY_CONNECTION_ERRORS_MOBILE, DEFAULT_NOTIFY_CONNECTION_ERRORS_MOBILE)
+    notify_connection_errors_persistent = entry.data.get(CONF_NOTIFY_CONNECTION_ERRORS_PERSISTENT, DEFAULT_NOTIFY_CONNECTION_ERRORS_PERSISTENT)
+    notify_connection_errors_services = entry.data.get(CONF_NOTIFY_CONNECTION_ERRORS_SERVICES, DEFAULT_NOTIFY_CONNECTION_ERRORS_SERVICES)
+    connection_error_notification_title = entry.data.get(CONF_CONNECTION_ERROR_NOTIFICATION_TITLE, DEFAULT_CONNECTION_ERROR_NOTIFICATION_TITLE)
+    connection_error_delay = entry.data.get(CONF_CONNECTION_ERROR_DELAY, DEFAULT_CONNECTION_ERROR_DELAY)
+    
+    # Alarm notification settings
+    notify_alarms_mobile = entry.data.get(CONF_NOTIFY_ALARMS_MOBILE, DEFAULT_NOTIFY_ALARMS_MOBILE)
+    notify_alarms_persistent = entry.data.get(CONF_NOTIFY_ALARMS_PERSISTENT, DEFAULT_NOTIFY_ALARMS_PERSISTENT)
+    notify_alarms_services = entry.data.get(CONF_NOTIFY_ALARMS_SERVICES, DEFAULT_NOTIFY_ALARMS_SERVICES)
+    alarm_notification_title = entry.data.get(CONF_ALARM_NOTIFICATION_TITLE, DEFAULT_ALARM_NOTIFICATION_TITLE)
+    alarm_delay = entry.data.get(CONF_ALARM_DELAY, DEFAULT_ALARM_DELAY)
+    
+    _LOGGER.debug(f"Connection error delay configured: {connection_error_delay} seconds")
+    _LOGGER.debug(f"Alarm delay configured: {alarm_delay} seconds")
 
     _LOGGER.info("Setting up %s.%s", DOMAIN, name)
     _LOGGER.debug(f"Used pymodbus version: {pymodbus.__version__}")
@@ -95,13 +135,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.warning("Config entry %s is already set up!", name)
         return False
 
-    hub = AmberModbusHub(hass, name, host, port, scan_interval)
+    hub = AmberModbusHub(hass, name, host, port, scan_interval, notify_connection_errors_mobile, notify_connection_errors_persistent, notify_connection_errors_services, connection_error_notification_title, connection_error_delay)
     await hub.async_config_entry_first_refresh()
 
-    hass.data[DOMAIN][name] = {"hub": hub}
+    # Create alarm monitor
+    alarm_monitor = AlarmMonitor(hass, name, notify_alarms_mobile, notify_alarms_persistent, notify_alarms_services, alarm_notification_title, alarm_delay)
+
+    hass.data[DOMAIN][name] = {"hub": hub, "alarm_monitor": alarm_monitor}
 
     for component in PLATFORMS:
         await hass.config_entries.async_forward_entry_setups(entry, [component])
+
+    # Start alarm monitoring after all entities are set up
+    alarm_monitor.start_monitoring()
 
     # Perform migration automatically 
     try:
@@ -115,8 +161,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     return True
 
+
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload Amber Modbus entry."""
+    name = entry.data.get(CONF_NAME)
+    
+    # Stop alarm monitoring
+    if name in hass.data[DOMAIN]:
+        alarm_monitor = hass.data[DOMAIN][name].get("alarm_monitor")
+        if alarm_monitor:
+            alarm_monitor.stop_monitoring()
+    
     unload_ok = all(
         await asyncio.gather(
             *[
@@ -127,7 +182,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     
     if unload_ok:
-        name = entry.data.get(CONF_NAME)
         if name in hass.data[DOMAIN]:
             hass.data[DOMAIN].pop(name)
 

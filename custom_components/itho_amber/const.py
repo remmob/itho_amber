@@ -10,8 +10,8 @@ from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorStateClass,
     SensorEntityDescription,
-
 )
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.components.number import (
     NumberDeviceClass,
     NumberEntity,
@@ -38,7 +38,114 @@ DEFAULT_PORT = 502
 DEFAULT_SCAN_INTERVAL = 10
 CONF_AMBER_HUB = "amber_hub"
 ATTR_MANUFACTURER = "Amber by @remmob"
+
+# Notification configuration - Alarms (P/F/E/S)
+CONF_NOTIFY_ALARMS_MOBILE = "notify_alarms_mobile"
+CONF_NOTIFY_ALARMS_PERSISTENT = "notify_alarms_persistent"
+CONF_NOTIFY_ALARMS_SERVICES = "notify_alarms_services"
+CONF_ALARM_NOTIFICATION_TITLE = "alarm_notification_title"
+CONF_ALARM_DELAY = "alarm_delay"
+
+# Notification configuration - Connection/Integration errors
+CONF_NOTIFY_CONNECTION_ERRORS_MOBILE = "notify_connection_errors_mobile"
+CONF_NOTIFY_CONNECTION_ERRORS_PERSISTENT = "notify_connection_errors_persistent"
+CONF_NOTIFY_CONNECTION_ERRORS_SERVICES = "notify_connection_errors_services"
+CONF_CONNECTION_ERROR_NOTIFICATION_TITLE = "connection_error_notification_title"
+CONF_CONNECTION_ERROR_DELAY = "connection_error_delay"
+
+# Backwards compatibility (deprecated)
+CONF_NOTIFY_CONNECTION_ERRORS = "notify_connection_errors"
+CONF_NOTIFY_PARTIAL_FAILURES = "notify_partial_failures"
+CONF_NOTIFY_PARTIAL_FAILURES_MOBILE = "notify_partial_failures_mobile"
+CONF_NOTIFY_ALARMS = "notify_alarms"
+CONF_NOTIFY_SERVICES = "notify_services"
+
+# Default values
+DEFAULT_NOTIFY_ALARMS_MOBILE = False
+DEFAULT_NOTIFY_ALARMS_PERSISTENT = False
+DEFAULT_NOTIFY_ALARMS_SERVICES = ""
+DEFAULT_ALARM_NOTIFICATION_TITLE = "Warmtepomp in storing!"
+DEFAULT_ALARM_DELAY = 60
+
+DEFAULT_NOTIFY_CONNECTION_ERRORS_MOBILE = False
+DEFAULT_NOTIFY_CONNECTION_ERRORS_PERSISTENT = False
+DEFAULT_NOTIFY_CONNECTION_ERRORS_SERVICES = ""
+DEFAULT_CONNECTION_ERROR_NOTIFICATION_TITLE = "Warmtepomp verbindingsfout!"
+DEFAULT_CONNECTION_ERROR_DELAY = 60
+
+# Backwards compatibility defaults
+DEFAULT_NOTIFY_CONNECTION_ERRORS = True
+DEFAULT_CONNECTION_ERROR_DELAY = 60
+DEFAULT_NOTIFY_PARTIAL_FAILURES = True
+DEFAULT_NOTIFY_PARTIAL_FAILURES_MOBILE = False
+DEFAULT_NOTIFY_ALARMS = False
+DEFAULT_NOTIFY_SERVICES = ""
 DEFAULT_ID = 1
+
+# Alarm sensor keys to monitor
+ALARM_SENSORS = [
+    # P errors (1 minute delay)
+    "p01_main_line_current_protection",
+    "p02_compressor_phase_current_protection",
+    "p03_ipm_module_protection",
+    "p04_compresor_oil_return_protection",
+    "p05_high_pressure_refrigerant_circuit",
+    "p06_very_high_pressure_refrigerant_circuit",
+    "p07_pre_heat_compressor",
+    "p08_gas_discharge_temp_sensor_protection",
+    "p09_evaporator_coil_temp_sensor_protection",
+    "p10_main_voltage_protection",
+    "p11_compressor_stop_ambient_temperature",
+    "p12_frequency_limit_compressor",
+    "p13_low_pressure_condensor_pressure_switch",
+    # F errors (1 minute delay)
+    "f01_failure_ambient_temperature_sensor_ta",
+    "f02_failure_outdoor_temperature_sensor_tp",
+    "f03_failure_compressor_discharge_temperature_sensor_tp",
+    "f04_failure_compressor_suction_temperature_sensor_ts",
+    "f05_failure_evporating_pressure_sensor_ps",
+    "f06_failure_high_pressure_sensor_pd",
+    "f07_failure_high_pressure_switch",
+    "f09_failure_a_fan_motor",
+    "f10_failure_b_fan_motor",
+    "f11_evporating_pressure_failure_ps",
+    "f12_high_pressure_failure_pd",
+    "f13_room_temperature_sensor_failure_tr",
+    "f14_failure_dhw_tank_temperature_sensor_tw",
+    "f15_failure_temperature_control_sensor_tc",
+    "f16_failure_outlet_temperature_sensor_tuo",
+    "f17_failure_inlet_temperature_sensor_tui",
+    "f18_failure_coil_temperature_sensor",
+    "f21_failure_water_temperature_sensor_zone1_tv1",
+    "f22_failure_water_temperature_sensor_zone2_tv2",
+    "f25_communication_failure",
+    "f27_failure_eeprom_indoor_unit",
+    "f28_pwm_signal_failure_pomp_p0",
+    "f29_failure_3_way_valve_zone1",
+    "f30_failure_3_way_valve_zone2",
+    # E errors (1 minute delay)
+    "e01_comm_failure_lcd_indoorunit",
+    "e02_failure_outdoor_pcb_compressor_inverter",
+    "e03_power_failure_compressor",
+    "e04_overcurrent_protection_compressor",
+    "e05_compressor_driver_failure",
+    "e06_vdc_unit_failure",
+    "e07_ac_current_failure",
+    "e08_eeprom_failure_oudoor_unit",
+    # S errors (1 minute delay, except S06/S07 which need 5 minutes)
+    "s01_cooling_anti_freezing_protection",
+    "s02_low_flow_warning",
+    "s03_flow_switch_failure",
+    "s04_communication_failure_indoor_unit",
+    "s05_communication_failure_outdoor_unit",
+    "s06_water_outlet_to_low_in_cooling",
+    "s07_water_outlet_to_high_in_heating",
+    "s08_defrost_failure",
+    "s09_water_outlet_temperature_low_during_defrost",
+    "s10_flow_switch_failure",
+    "s11_cooling_anti_freezing_protection",
+    "s13_failure_4_way_valve",
+]
 
 ON_OFF_STATUS = {
     0: "OFF",
@@ -1246,7 +1353,14 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
         entity_registry_enabled_default=True,
-    ),    
+    ),
+    "connection_status": AmberModbusSensorEntityDescription(
+        name="Connection Status",
+        key="connection_status",
+        icon="mdi:lan-connect",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=True,
+    ),
 }
 
 @dataclass

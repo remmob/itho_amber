@@ -81,7 +81,7 @@ class AmberSwitch(CoordinatorEntity, SwitchEntity):
     async def async_turn_on(self, **kwargs):
         """Send the on command."""
         address = int(self.entity_description.key)
-        self._hub.write_registers(address, payload=ModbusTcpClient.convert_to_registers(int(1), data_type=ModbusTcpClient.DATATYPE.INT16, word_order="big"))
+        self._hub.write_registers(address, ModbusTcpClient.convert_to_registers(int(1), data_type=ModbusTcpClient.DATATYPE.INT16, word_order="big"))
 
         for _ in range(
                 self.MAX_STATUS_CHANGE_TIME_SECONDS // self.POLL_FREQUENCY_SECONDS
@@ -97,7 +97,7 @@ class AmberSwitch(CoordinatorEntity, SwitchEntity):
     async def async_turn_off(self, **kwargs):
         """Send the off command."""
         address = int(self.entity_description.key)
-        self._hub.write_registers(address, payload=ModbusTcpClient.convert_to_registers(int(0), data_type=ModbusTcpClient.DATATYPE.INT16, word_order="big"))
+        self._hub.write_registers(address, ModbusTcpClient.convert_to_registers(int(0), data_type=ModbusTcpClient.DATATYPE.INT16, word_order="big"))
         
         for _ in range(
                 self.MAX_STATUS_CHANGE_TIME_SECONDS // self.POLL_FREQUENCY_SECONDS

@@ -107,6 +107,11 @@ views:
             name: Huidig setpoint cooling zone 2
             icon: mdi:thermometer-water
         title: Huidige setpoints
+      - type: entities
+        entities:
+          - entity: sensor.amber_connection_status
+            name: Verbindings status
+        title: Vebindingstatus
   - type: masonry
     path: settings
     title: Settings

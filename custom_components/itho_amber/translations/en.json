@@ -2,21 +2,88 @@
   "config": {
     "step": {
       "user": {
-        "title": "Define your Itho Amber Heatpump modbus-connection",
+        "title": "Configure your Itho Amber modbus connection",
         "data": {
-          "host": "The ip-address of your Itho Amber Heatpump modbus device",
-          "name": "The prefix to be used for your Itho Amber Heatpump sensors",
-          "port": "The TCP port on which to connect to the Itho Amber Heatpump",
-          "scan_interval": "The polling frequency of the modbus registers in seconds"
+          "name": "Name for the integration",
+          "host": "IP address of your Itho Amber heat pump",
+          "port": "TCP port (default 502)",
+          "scan_interval": "Polling interval in seconds",
+          "notify_alarms_mobile": "Send notifications for alarms (P/F/E/S)",
+          "notify_alarms_services": "Notify services for alarm notifications",
+          "notify_alarms_persistent": "Show persistent notifications for alarms",
+          "alarm_notification_title": "Title for alarm notifications",
+          "alarm_delay": "Alarm delay (seconds)",
+          "notify_connection_errors_mobile": "Send notifications for connection errors",
+          "notify_connection_errors_services": "Notify services for connection errors",
+          "notify_connection_errors_persistent": "Show persistent notifications for connection errors",
+          "connection_error_notification_title": "Title for connection error notifications",
+          "connection_error_delay": "Connection error delay (seconds)"
+        },
+        "data_description": {
+          "name": "The name used as prefix for all entities",
+          "host": "The IP address of your Itho Amber heat pump",
+          "port": "The TCP port where the Modbus interface is available",
+          "scan_interval": "How often the heat pump is polled (in seconds)",
+          "notify_alarms_mobile": "Send notifications to the notify services below",
+          "notify_alarms_services": "Enter notify service names separated by commas (e.g: mobile_app_iphone,mobile_app_tablet)",
+          "notify_alarms_persistent": "Show notifications in the Home Assistant interface (persistent notifications)",
+          "alarm_notification_title": "The title used for alarm notifications. Default: 'Heat pump in alarm!'",
+          "alarm_delay": "Time (in seconds) to wait before sending an alarm notification. S06 and S07 have a minimum delay of 5 minutes (300 seconds)",
+          "notify_connection_errors_mobile": "Send notifications to the notify services below",
+          "notify_connection_errors_services": "Enter notify service names separated by commas (e.g: mobile_app_iphone,mobile_app_tablet)",
+          "notify_connection_errors_persistent": "Show notifications in the Home Assistant interface (persistent notifications)",
+          "connection_error_notification_title": "The title used for connection error notifications. Default: 'Heat pump connection error!'",
+          "connection_error_delay": "Time (in seconds) to wait before sending a connection error notification"
         }
       }
     },
     "error": {
-      "already_configured": "Device is already configured"
+      "already_configured": "Device is already configured",
+      "invalid_host": "Invalid IP address or hostname"
     },
     "abort": {
       "already_configured": "Device is already configured"
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Configure Itho Amber connection settings",
+        "data": {
+          "host": "IP address of your Itho Amber heat pump",
+          "port": "TCP port (default 502)",
+          "scan_interval": "Polling interval in seconds",
+          "notify_alarms_mobile": "Send notifications for alarms (P/F/E/S)",
+          "notify_alarms_services": "Notify services for alarm notifications",
+          "notify_alarms_persistent": "Show persistent notifications for alarms",
+          "alarm_notification_title": "Title for alarm notifications",
+          "alarm_delay": "Alarm delay (seconds)",
+          "notify_connection_errors_mobile": "Send notifications for connection errors",
+          "notify_connection_errors_services": "Notify services for connection errors",
+          "notify_connection_errors_persistent": "Show persistent notifications for connection errors",
+          "connection_error_notification_title": "Title for connection error notifications",
+          "connection_error_delay": "Connection error delay (seconds)"
+        },
+        "data_description": {
+          "host": "The IP address of your Itho Amber heat pump",
+          "port": "The TCP port where the Modbus interface is available",
+          "scan_interval": "How often the heat pump is polled (in seconds)",
+          "notify_alarms_mobile": "Send notifications to the notify services below",
+          "notify_alarms_services": "Enter notify service names separated by commas (e.g: mobile_app_iphone,mobile_app_tablet)",
+          "notify_alarms_persistent": "Show notifications in the Home Assistant interface (persistent notifications)",
+          "alarm_notification_title": "The title used for alarm notifications. Default: 'Heat pump in alarm!'",
+          "alarm_delay": "Time (in seconds) to wait before sending an alarm notification. S06 and S07 have a minimum delay of 5 minutes (300 seconds)",
+          "notify_connection_errors_mobile": "Send notifications to the notify services below",
+          "notify_connection_errors_services": "Enter notify service names separated by commas (e.g: mobile_app_iphone,mobile_app_tablet)",
+          "notify_connection_errors_persistent": "Show notifications in the Home Assistant interface (persistent notifications)",
+          "connection_error_notification_title": "The title used for connection error notifications. Default: 'Heat pump connection error!'",
+          "connection_error_delay": "Time (in seconds) to wait before sending a connection error notification"
+        }
+      }
+    },
+    "error": {
+      "invalid_host": "Invalid IP address or hostname",
+      "invalid_notify_service": "Invalid notify service(s). Check if the service exists in Home Assistant."
+    }
   }
-
 }
