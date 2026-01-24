@@ -38,7 +38,7 @@ DEFAULT_PORT = 502
 DEFAULT_SCAN_INTERVAL = 10
 CONF_AMBER_HUB = "amber_hub"
 ATTR_MANUFACTURER = "Mischa Bommer"
-ATTR_COPYRIGHT = "©2026 Bommer Software"
+ATTR_COPYRIGHT = "2026 Bommer Software"
 
 # Notification configuration - Alarms (P/F/E/S)
 CONF_NOTIFY_ALARMS_MOBILE = "notify_alarms_mobile"
