@@ -33,11 +33,12 @@ from homeassistant.const import (
 )
 
 DOMAIN = "itho_amber"
-DEFAULT_NAME = "Amber"
+DEFAULT_NAME = "Itho Amber 65/95/120 Heatpump integration"
 DEFAULT_PORT = 502
 DEFAULT_SCAN_INTERVAL = 10
 CONF_AMBER_HUB = "amber_hub"
-ATTR_MANUFACTURER = "Amber by @remmob"
+ATTR_MANUFACTURER = "Mischa Bommer"
+ATTR_COPYRIGHT = "©2026 Bommer Software"
 
 # Notification configuration - Alarms (P/F/E/S)
 CONF_NOTIFY_ALARMS_MOBILE = "notify_alarms_mobile"
@@ -234,6 +235,8 @@ ACTIVE_STATUS = {
 @dataclass
 class AmberModbusSensorEntityDescription(SensorEntityDescription):
     """Amber sensor entities."""
+    native_min_value: float | None = None
+    native_max_value: float | None = None
 
 SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
     #Settings data
@@ -777,6 +780,8 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         device_class=SensorDeviceClass.FREQUENCY,
         state_class=SensorStateClass.MEASUREMENT,
         suggested_display_precision=0,
+        native_min_value=0,
+        native_max_value=90,
         entity_registry_enabled_default=True,
     ),
     "516": AmberModbusSensorEntityDescription(

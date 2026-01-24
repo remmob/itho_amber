@@ -28,6 +28,8 @@ from .const import (
     AmberModbusSelectEntityHWTBHPriorityDescription,
     AmberModbusSelectEntityP0PumpModeDescription,
     AmberModbusSelectEntityP0PumpSpeedDescription,
+    DEFAULT_NAME,
+    ATTR_COPYRIGHT,
 )
 
 async def async_setup_entry(hass, entry, async_add_entities):
@@ -36,8 +38,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     device_info = {
         "identifiers": {(DOMAIN, hub_name)},
-        "name": hub_name,
+        "name": DEFAULT_NAME,
         "manufacturer": ATTR_MANUFACTURER,
+        "model": ATTR_COPYRIGHT,
     }
 
     entities = []

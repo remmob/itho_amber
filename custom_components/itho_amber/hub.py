@@ -41,6 +41,7 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         self._host = host
         self._port = int(port)
         self._consecutive_failures = 0  # Track consecutive connection failures
+        self._last_successful_read = None  # Track last time we got valid data
         self._notify_connection_errors_mobile = notify_connection_errors_mobile
         self._notify_connection_errors_persistent = notify_connection_errors_persistent
         self._notify_services = notify_services
@@ -155,6 +156,15 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
                 _LOGGER.error(
                     f"Modbus error reading registers {address}-{address+count-1}: {resp}"
                 )
+                # Force reconnect bij error frames - mogelijk gateway/warmtepomp communicatie probleem
+                # Dit helpt wanneer de IP-gateway nog bereikbaar is maar niet met de warmtepomp kan communiceren
+                _LOGGER.warning("Forcing reconnect due to Modbus error frame")
+                if self._client is not None:
+                    try:
+                        self._client.close()
+                    except Exception:
+                        pass
+                    self._client = None
                 return None
 
             # Response object exists but contains no registers
@@ -164,9 +174,13 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
                 )
                 return None
             _LOGGER.debug( f"Successfully read {len(resp.registers)} registers from {address}-{address+count-1}" )
+            
+            # Update last successful read timestamp
+            self._last_successful_read = datetime.now()
+            
             return resp
 
-        except (ConnectionException, ModbusIOException) as e:
+        except (ConnectionException, ModbusIOException, ConnectionResetError, BrokenPipeError, OSError) as e:
             # Expected communication‑related errors
             _LOGGER.error(
                 f"Modbus communication error while reading {address}-{address+count-1}: {e}"
@@ -189,6 +203,20 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
 
     async def _async_update_data(self) -> dict:
         """Fetch Modbus data safely with clear logging and consistent return handling."""
+        # Check if we haven't received valid data for too long (5 minutes)
+        if self._last_successful_read is not None:
+            time_since_success = (datetime.now() - self._last_successful_read).total_seconds()
+            if time_since_success > 300:  # 5 minutes without successful reads
+                _LOGGER.warning(
+                    f"No successful reads for {int(time_since_success)}s (>5min), forcing reconnect"
+                )
+                if self._client is not None:
+                    try:
+                        self._client.close()
+                    except Exception:
+                        pass
+                    self._client = None
+        
         # Start with previous data - only overwrite if we get new data
         data: dict = {
             **self.data_store.get("setting_data", {}),

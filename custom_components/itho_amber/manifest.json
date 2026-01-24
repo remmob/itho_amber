@@ -1,10 +1,12 @@
 {
-    "domain": "itho_amber",
-    "name": "Itho Daalderop amber",
-    "codeowners": ["@remmob"],
-    "config_flow": true,
-    "documentation": "https://github.com/remmob/itho_amber",
-    "iot_class": "local_polling",
-    "issue_tracker": "https://github.com/remmob/itho_amber/issues",
-    "version": "1.3.0-beta3.4" 
-  }
+  "domain": "itho_amber",
+  "name": "Itho Amber 65/95/120 Heatpump integration",
+  "codeowners": [
+    "@remmob"
+  ],
+  "config_flow": true,
+  "documentation": "https://github.com/remmob/itho_amber",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/remmob/itho_amber/issues",
+  "version": "1.3.0-beta3.5"
+}

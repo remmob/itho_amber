@@ -1,6 +1,7 @@
 """Platform for sensor integration."""
 
 from __future__ import annotations
+import logging
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import CONF_NAME
@@ -12,7 +13,11 @@ from .const import (
     DOMAIN,
     SENSOR_TYPES,
     AmberModbusSensorEntityDescription,
+    DEFAULT_NAME,
+    ATTR_COPYRIGHT,
 )
+
+_LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass, entry, async_add_entities):
     hub_name = entry.data[CONF_NAME]
@@ -20,8 +25,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
 
     device_info = {
         "identifiers": {(DOMAIN, hub_name)},
-        "name": hub_name,
+        "name": DEFAULT_NAME,
         "manufacturer": ATTR_MANUFACTURER,
+        "model": ATTR_COPYRIGHT,
     }
 
     entities = []
@@ -66,8 +72,25 @@ class AmberSensor(CoordinatorEntity, SensorEntity):
     @property
     def native_value(self):
         """Return the state of the sensor."""
-        return (
-            self.coordinator.data[self.entity_description.key]
-            if self.entity_description.key in self.coordinator.data
-            else None
-        ) 
+        if self.entity_description.key not in self.coordinator.data:
+            return None
+        
+        value = self.coordinator.data[self.entity_description.key]
+        
+        # Filter values outside of configured min/max range
+        if value is not None:
+            if self.entity_description.native_min_value is not None:
+                if value < self.entity_description.native_min_value:
+                    _LOGGER.debug(
+                        f"{self.name}: Value {value} below minimum {self.entity_description.native_min_value}, ignoring"
+                    )
+                    return self._attr_native_value  # Keep previous value
+            
+            if self.entity_description.native_max_value is not None:
+                if value > self.entity_description.native_max_value:
+                    _LOGGER.debug(
+                        f"{self.name}: Value {value} above maximum {self.entity_description.native_max_value}, ignoring"
+                    )
+                    return self._attr_native_value  # Keep previous value
+        
+        return value 
