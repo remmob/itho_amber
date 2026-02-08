@@ -14,6 +14,7 @@ from homeassistant.const import (
     CONF_SCAN_INTERVAL,
 )
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import selector
 
 from .const import (
     DEFAULT_NAME,
@@ -46,28 +47,84 @@ from .const import (
 from .repairs import async_migrate_temperature_typo
 
 
-DATA_SCHEMA = vol.Schema(
-    {
-        vol.Optional(CONF_NAME, default=DEFAULT_NAME): str,
-        vol.Required(CONF_HOST): str,
-        vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
-        vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): int,
-        
-        # === ALARM NOTIFICATIONS (P/F/E/S) ===
-        vol.Optional(CONF_NOTIFY_ALARMS_MOBILE, default=DEFAULT_NOTIFY_ALARMS_MOBILE): bool,
-        vol.Optional(CONF_NOTIFY_ALARMS_SERVICES, default=DEFAULT_NOTIFY_ALARMS_SERVICES): str,
-        vol.Optional(CONF_NOTIFY_ALARMS_PERSISTENT, default=DEFAULT_NOTIFY_ALARMS_PERSISTENT): bool,
-        vol.Optional(CONF_ALARM_NOTIFICATION_TITLE, default=DEFAULT_ALARM_NOTIFICATION_TITLE): str,
-        vol.Optional(CONF_ALARM_DELAY, default=DEFAULT_ALARM_DELAY): vol.All(vol.Coerce(int), vol.Range(min=60, max=3600)),
-        
-        # === CONNECTION/INTEGRATION ERRORS ===
-        vol.Optional(CONF_NOTIFY_CONNECTION_ERRORS_MOBILE, default=DEFAULT_NOTIFY_CONNECTION_ERRORS_MOBILE): bool,
-        vol.Optional(CONF_NOTIFY_CONNECTION_ERRORS_SERVICES, default=DEFAULT_NOTIFY_CONNECTION_ERRORS_SERVICES): str,
-        vol.Optional(CONF_NOTIFY_CONNECTION_ERRORS_PERSISTENT, default=DEFAULT_NOTIFY_CONNECTION_ERRORS_PERSISTENT): bool,
-        vol.Optional(CONF_CONNECTION_ERROR_NOTIFICATION_TITLE, default=DEFAULT_CONNECTION_ERROR_NOTIFICATION_TITLE): str,
-        vol.Optional(CONF_CONNECTION_ERROR_DELAY, default=DEFAULT_CONNECTION_ERROR_DELAY): vol.All(vol.Coerce(int), vol.Range(min=60, max=3600)),
-    }
-)
+def _get_notify_service_options(hass: HomeAssistant, mobile_only: bool = False) -> list[str]:
+    services = hass.services.async_services().get("notify", {})
+    options = sorted(services.keys())
+    if mobile_only:
+        options = [name for name in options if name.startswith("mobile_app_")]
+    return options
+
+
+def _services_default(value) -> list[str]:
+    if isinstance(value, list):
+        return [str(v).strip() for v in value if str(v).strip()]
+    if isinstance(value, str):
+        return [s.strip() for s in value.split(",") if s.strip()]
+    return []
+
+
+def _normalize_services(value) -> str:
+    if isinstance(value, list):
+        return ", ".join([str(v).strip() for v in value if str(v).strip()])
+    if value is None:
+        return ""
+    return str(value).strip()
+
+
+def _split_services(value) -> list[str]:
+    if isinstance(value, list):
+        return [str(v).strip() for v in value if str(v).strip()]
+    if not value:
+        return []
+    return [s.strip() for s in str(value).split(",") if s.strip()]
+
+
+def _build_data_schema(hass: HomeAssistant) -> vol.Schema:
+    options = _get_notify_service_options(hass, mobile_only=True)
+    service_selector = selector.SelectSelector(
+        selector.SelectSelectorConfig(
+            options=options,
+            multiple=True,
+            custom_value=True,
+            mode=selector.SelectSelectorMode.DROPDOWN,
+        )
+    )
+    return vol.Schema(
+        {
+            vol.Optional(CONF_NAME, default=DEFAULT_NAME): str,
+            vol.Required(CONF_HOST): str,
+            vol.Required(CONF_PORT, default=DEFAULT_PORT): int,
+            vol.Optional(CONF_SCAN_INTERVAL, default=DEFAULT_SCAN_INTERVAL): int,
+
+            # === ALARM NOTIFICATIONS (P/F/E/S) ===
+            vol.Optional(CONF_NOTIFY_ALARMS_MOBILE, default=DEFAULT_NOTIFY_ALARMS_MOBILE): bool,
+            vol.Optional(
+                CONF_NOTIFY_ALARMS_SERVICES,
+                default=_services_default(DEFAULT_NOTIFY_ALARMS_SERVICES),
+            ): service_selector,
+            vol.Optional(CONF_NOTIFY_ALARMS_PERSISTENT, default=DEFAULT_NOTIFY_ALARMS_PERSISTENT): bool,
+            vol.Optional(CONF_ALARM_NOTIFICATION_TITLE, default=DEFAULT_ALARM_NOTIFICATION_TITLE): str,
+            vol.Optional(CONF_ALARM_DELAY, default=DEFAULT_ALARM_DELAY): vol.All(
+                vol.Coerce(int), vol.Range(min=60, max=3600)
+            ),
+
+            # === CONNECTION/INTEGRATION ERRORS ===
+            vol.Optional(CONF_NOTIFY_CONNECTION_ERRORS_MOBILE, default=DEFAULT_NOTIFY_CONNECTION_ERRORS_MOBILE): bool,
+            vol.Optional(
+                CONF_NOTIFY_CONNECTION_ERRORS_SERVICES,
+                default=_services_default(DEFAULT_NOTIFY_CONNECTION_ERRORS_SERVICES),
+            ): service_selector,
+            vol.Optional(CONF_NOTIFY_CONNECTION_ERRORS_PERSISTENT, default=DEFAULT_NOTIFY_CONNECTION_ERRORS_PERSISTENT): bool,
+            vol.Optional(
+                CONF_CONNECTION_ERROR_NOTIFICATION_TITLE,
+                default=DEFAULT_CONNECTION_ERROR_NOTIFICATION_TITLE,
+            ): str,
+            vol.Optional(
+                CONF_CONNECTION_ERROR_DELAY,
+                default=DEFAULT_CONNECTION_ERROR_DELAY,
+            ): vol.All(vol.Coerce(int), vol.Range(min=60, max=3600)),
+        }
+    )
 
 def host_valid(host):
     """Return True if hostname or IP address is valid."""
@@ -144,7 +201,7 @@ class AmberModbusConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="user",
-            data_schema=DATA_SCHEMA,
+            data_schema=_build_data_schema(self.hass),
             errors=errors,
         )
 
@@ -166,10 +223,10 @@ class AmberOptionsFlowHandler(config_entries.OptionsFlow):
                 )
             
             # Validate alarm notify services if alarms mobile is enabled
-            notify_alarms_services = user_input.get(CONF_NOTIFY_ALARMS_SERVICES, "").strip()
+            notify_alarms_services = _normalize_services(user_input.get(CONF_NOTIFY_ALARMS_SERVICES, ""))
             if user_input.get(CONF_NOTIFY_ALARMS_MOBILE) and notify_alarms_services:
                 # Check if services exist
-                services = [s.strip() for s in notify_alarms_services.split(",") if s.strip()]
+                services = _split_services(notify_alarms_services)
                 invalid_services = []
                 for service in services:
                     if not self.hass.services.has_service("notify", service):
@@ -184,10 +241,10 @@ class AmberOptionsFlowHandler(config_entries.OptionsFlow):
                     )
             
             # Validate connection error notify services if connection errors mobile is enabled
-            notify_connection_services = user_input.get(CONF_NOTIFY_CONNECTION_ERRORS_SERVICES, "").strip()
+            notify_connection_services = _normalize_services(user_input.get(CONF_NOTIFY_CONNECTION_ERRORS_SERVICES, ""))
             if user_input.get(CONF_NOTIFY_CONNECTION_ERRORS_MOBILE) and notify_connection_services:
                 # Check if services exist
-                services = [s.strip() for s in notify_connection_services.split(",") if s.strip()]
+                services = _split_services(notify_connection_services)
                 invalid_services = []
                 for service in services:
                     if not self.hass.services.has_service("notify", service):
@@ -263,9 +320,15 @@ class AmberOptionsFlowHandler(config_entries.OptionsFlow):
                 ): bool,
                 vol.Optional(
                     CONF_NOTIFY_ALARMS_SERVICES,
-                    default=self.config_entry.data.get(CONF_NOTIFY_ALARMS_SERVICES, DEFAULT_NOTIFY_ALARMS_SERVICES),
-                    description={"suggested_value": self.config_entry.data.get(CONF_NOTIFY_ALARMS_SERVICES, DEFAULT_NOTIFY_ALARMS_SERVICES)}
-                ): str,
+                    default=_services_default(self.config_entry.data.get(CONF_NOTIFY_ALARMS_SERVICES, DEFAULT_NOTIFY_ALARMS_SERVICES)),
+                ): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=_get_notify_service_options(self.hass, mobile_only=True),
+                        multiple=True,
+                        custom_value=True,
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
                 vol.Optional(
                     CONF_NOTIFY_ALARMS_PERSISTENT,
                     default=self.config_entry.data.get(CONF_NOTIFY_ALARMS_PERSISTENT, DEFAULT_NOTIFY_ALARMS_PERSISTENT)
@@ -286,9 +349,15 @@ class AmberOptionsFlowHandler(config_entries.OptionsFlow):
                 ): bool,
                 vol.Optional(
                     CONF_NOTIFY_CONNECTION_ERRORS_SERVICES,
-                    default=self.config_entry.data.get(CONF_NOTIFY_CONNECTION_ERRORS_SERVICES, DEFAULT_NOTIFY_CONNECTION_ERRORS_SERVICES),
-                    description={"suggested_value": self.config_entry.data.get(CONF_NOTIFY_CONNECTION_ERRORS_SERVICES, DEFAULT_NOTIFY_CONNECTION_ERRORS_SERVICES)}
-                ): str,
+                    default=_services_default(self.config_entry.data.get(CONF_NOTIFY_CONNECTION_ERRORS_SERVICES, DEFAULT_NOTIFY_CONNECTION_ERRORS_SERVICES)),
+                ): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=_get_notify_service_options(self.hass, mobile_only=True),
+                        multiple=True,
+                        custom_value=True,
+                        mode=selector.SelectSelectorMode.DROPDOWN,
+                    )
+                ),
                 vol.Optional(
                     CONF_NOTIFY_CONNECTION_ERRORS_PERSISTENT,
                     default=self.config_entry.data.get(CONF_NOTIFY_CONNECTION_ERRORS_PERSISTENT, DEFAULT_NOTIFY_CONNECTION_ERRORS_PERSISTENT)
