@@ -92,5 +92,6 @@ Visit the [wiki](https://github.com/remmob/itho_amber/wiki) for more information
 ## Roadmap
 - Adding Modbus RTU support
   
-
+---
+©2026 Bommer Software | Author: Mischa Bommer
 
