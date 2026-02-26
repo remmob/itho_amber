@@ -2,20 +2,88 @@
   "config": {
     "step": {
       "user": {
-        "title": "Define your Itho Amber modbus-connection",
+        "title": "Configureer uw Itho Amber modbus-verbinding",
         "data": {
-          "host": "The ip-address of your Itho Amber Heatpump modbus device",
-          "name": "The prefix to be used for your Itho Amber Heatpump sensors",
-          "port": "The TCP port on which to connect to the Itho Amber Heatpump",
-          "scan_interval": "The polling frequency of the modbus registers in seconds"
+          "name": "Naam voor de integratie",
+          "host": "IP-adres van uw Itho Amber warmtepomp",
+          "port": "TCP-poort (standaard 502)",
+          "scan_interval": "Polling interval in seconden",
+          "notify_alarms_mobile": "Stuur notifications voor alarmen (P/F/E/S)",
+          "notify_alarms_services": "Notify services voor alarm meldingen",
+          "notify_alarms_persistent": "Toon persistent notifications voor alarmen",
+          "alarm_notification_title": "Titel voor alarm meldingen",
+          "alarm_delay": "Wachttijd alarmen (seconden)",
+          "notify_connection_errors_mobile": "Stuur notifications voor verbindingsfouten",
+          "notify_connection_errors_services": "Notify services voor verbindingsfouten",
+          "notify_connection_errors_persistent": "Toon persistent notifications voor verbindingsfouten",
+          "connection_error_notification_title": "Titel voor verbindingsfouten",
+          "connection_error_delay": "Wachttijd verbindingsfouten (seconden)"
+        },
+        "data_description": {
+          "name": "De naam die gebruikt wordt als prefix voor alle entiteiten",
+          "host": "Het IP-adres van uw Itho Amber warmtepomp",
+          "port": "De TCP-poort waarop de Modbus interface beschikbaar is",
+          "scan_interval": "Hoe vaak de warmtepomp wordt uitgelezen (in seconden)",
+          "notify_alarms_mobile": "Stuur meldingen naar de onderstaande notify services",
+          "notify_alarms_services": "Voer notify service namen in gescheiden door komma's (bijv: mobile_app_iphone,mobile_app_tablet)",
+          "notify_alarms_persistent": "Toon meldingen in de Home Assistant interface (persistent notifications)",
+          "alarm_notification_title": "De titel die wordt gebruikt voor alarm meldingen. Standaard: 'Warmtepomp in storing!'",
+          "alarm_delay": "Tijd (in seconden) wachten voordat een alarm melding wordt verstuurd. S06 en S07 hebben minimaal 5 minuten (300 seconden) vertraging",
+          "notify_connection_errors_mobile": "Stuur meldingen naar de onderstaande notify services",
+          "notify_connection_errors_services": "Voer notify service namen in gescheiden door komma's (bijv: mobile_app_iphone,mobile_app_tablet)",
+          "notify_connection_errors_persistent": "Toon meldingen in de Home Assistant interface (persistent notifications)",
+          "connection_error_notification_title": "De titel die wordt gebruikt voor verbindingsfout meldingen. Standaard: 'Warmtepomp verbindingsfout!'",
+          "connection_error_delay": "Tijd (in seconden) wachten voordat een verbindingsfout melding wordt verstuurd"
         }
       }
     },
     "error": {
-      "already_configured": "Device is already configured"
+      "already_configured": "Apparaat is al geconfigureerd",
+      "invalid_host": "Ongeldig IP-adres of hostnaam"
     },
     "abort": {
-      "already_configured": "Device is already configured"
+      "already_configured": "Apparaat is al geconfigureerd"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Configureer Itho Amber verbindingsinstellingen",
+        "data": {
+          "host": "IP-adres van uw Itho Amber warmtepomp",
+          "port": "TCP-poort (standaard 502)",
+          "scan_interval": "Polling interval in seconden",
+          "notify_alarms_mobile": "Stuur notifications voor alarmen (P/F/E/S)",
+          "notify_alarms_services": "Notify services voor alarm meldingen",
+          "notify_alarms_persistent": "Toon persistent notifications voor alarmen",
+          "alarm_notification_title": "Titel voor alarm meldingen",
+          "alarm_delay": "Wachttijd alarmen (seconden)",
+          "notify_connection_errors_mobile": "Stuur notifications voor verbindingsfouten",
+          "notify_connection_errors_services": "Notify services voor verbindingsfouten",
+          "notify_connection_errors_persistent": "Toon persistent notifications voor verbindingsfouten",
+          "connection_error_notification_title": "Titel voor verbindingsfouten",
+          "connection_error_delay": "Wachttijd verbindingsfouten (seconden)"
+        },
+        "data_description": {
+          "host": "Het IP-adres van uw Itho Amber warmtepomp",
+          "port": "De TCP-poort waarop de Modbus interface beschikbaar is",
+          "scan_interval": "Hoe vaak de warmtepomp wordt uitgelezen (in seconden)",
+          "notify_alarms_mobile": "Stuur meldingen naar de onderstaande notify services",
+          "notify_alarms_services": "Voer notify service namen in gescheiden door komma's (bijv: mobile_app_iphone,mobile_app_tablet)",
+          "notify_alarms_persistent": "Toon meldingen in de Home Assistant interface (persistent notifications)",
+          "alarm_notification_title": "De titel die wordt gebruikt voor alarm meldingen. Standaard: 'Warmtepomp in storing!'",
+          "alarm_delay": "Tijd (in seconden) wachten voordat een alarm melding wordt verstuurd. S06 en S07 hebben minimaal 5 minuten (300 seconden) vertraging",
+          "notify_connection_errors_mobile": "Stuur meldingen naar de onderstaande notify services",
+          "notify_connection_errors_services": "Voer notify service namen in gescheiden door komma's (bijv: mobile_app_iphone,mobile_app_tablet)",
+          "notify_connection_errors_persistent": "Toon meldingen in de Home Assistant interface (persistent notifications)",
+          "connection_error_notification_title": "De titel die wordt gebruikt voor verbindingsfout meldingen. Standaard: 'Warmtepomp verbindingsfout!'",
+          "connection_error_delay": "Tijd (in seconden) wachten voordat een verbindingsfout melding wordt verstuurd"
+        }
+      }
+    },
+    "error": {
+      "invalid_host": "Ongeldig IP-adres of hostnaam",
+      "invalid_notify_service": "Ongeldige notify service(s). Controleer of de service bestaat in Home Assistant."
     }
   }
 }

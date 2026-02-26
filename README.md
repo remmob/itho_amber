@@ -89,8 +89,6 @@ Visit the [wiki](https://github.com/remmob/itho_amber/wiki) for more information
 -   Some values are read-only. I do not understand why this choice was made by 
     Itho, I have asked them<br> to make all settings writeable... To be continued... 
 
-## Roadmap
-- Adding Modbus RTU support
   
 ---
 ©2026 Bommer Software | Author: Mischa Bommer
