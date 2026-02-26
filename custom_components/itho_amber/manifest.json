@@ -1,15 +1,15 @@
 {
   "domain": "itho_amber",
   "name": "Itho Amber 65/95/120 Heatpump integration",
+  "after_dependencies": [],
   "codeowners": [
     "@remmob"
   ],
   "config_flow": true,
+  "dependencies": [],
   "documentation": "https://github.com/remmob/itho_amber",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/remmob/itho_amber/issues",
-  "version": "1.3.0",
   "requirements": [],
-  "dependencies": [],
-  "after_dependencies": []
+  "version": "1.3.0"
 }
