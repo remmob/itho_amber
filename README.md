@@ -10,6 +10,10 @@
 > it may be necessary to set the **Modbus gateway Parity** to `"Even"` instead of `"None"`.  
 > This ensures proper communication and avoids connection issues.
 
+
+ >**Disclaimer**: This is an independent, community-built integration. It is not affiliated with, endorsed by, or supported by Itho Daalderop. "Itho Daalderop" and the Itho Daalderop logo are trademarks of their respective owner, used here only to identify compatible hardware. The software is provided as-is (see [LICENSE](LICENSE)); wiring your unit and connecting a gateway is done at your own risk.
+
+
 # Itho Daalderop Amber Heat pump integration
 Home Assistant integration for Itho Daalderop Amber heat pump.<br> 
 The Amber heat pump family contains 3 models.
