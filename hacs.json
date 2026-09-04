@@ -2,5 +2,7 @@
   "name": "Itho Amber",
   "content_in_root": false,
   "homeassistant": "2025.12.0",
-  "render_readme": false
-} 
+  "render_readme": false,
+  "zip_release": true,
+  "filename": "itho_amber.zip"
+}

@@ -1,0 +1,29 @@
+name: Attach HACS release asset
+
+# Builds the zip HACS expects (hacs.json: zip_release + filename) and attaches
+# it to the release as a real GitHub asset. Without this, GitHub never counts
+# a download (it does not track the auto-generated source archive), and HACS
+# would have nothing to install from once zip_release is enabled.
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  attach-asset:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout the released tag
+        uses: actions/checkout@v4
+
+      - name: Build the HACS zip asset
+        run: |
+          cd custom_components/itho_amber
+          zip -r "../../itho_amber.zip" . -x '__pycache__/*'
+
+      - name: Upload the zip to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" "itho_amber.zip" --clobber -R ${{ github.repository }}
