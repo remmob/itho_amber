@@ -4,10 +4,11 @@ from __future__ import annotations
 import logging
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.const import CONF_NAME
+from homeassistant.const import CONF_NAME, EntityCategory
 from homeassistant.core import callback
 import homeassistant.util.dt as dt_util
 
+from .connection import HAS_SHARED_CONNECTION, active_method
 from .const import (
     ATTR_MANUFACTURER,
     DOMAIN,
@@ -41,6 +42,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
             sensor_description,
         )
         entities.append(sensor)
+
+    entities.append(AmberConnectionMethodSensor(hub_name, hub, device_info))
 
     async_add_entities(entities)
     return True
@@ -95,4 +98,46 @@ class AmberSensor(CoordinatorEntity, SensorEntity):
                     )
                     return self._attr_native_value  # Keep previous value
         
-        return value 
+        return value
+
+
+class AmberConnectionMethodSensor(CoordinatorEntity, SensorEntity):
+    """Shows which Modbus connection method is active.
+
+    Reads no register - the value comes from connection.py and reflects
+    only whether Home Assistant's `async_get_unit` was available (2026.9+,
+    shared connection) or not (older, this integration opens its own
+    socket). A diagnostic entity, disabled by default.
+    """
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_icon = "mdi:transit-connection-variant"
+    _attr_entity_registry_enabled_default = False
+
+    def __init__(self, platform_name: str, hub: AmberModbusHub, device_info):
+        """Initialize the sensor."""
+        self._platform_name = platform_name
+        self._attr_device_info = device_info
+
+        super().__init__(coordinator=hub)
+
+    @property
+    def name(self):
+        """Return the name."""
+        return f"{self._platform_name} Connection method"
+
+    @property
+    def unique_id(self) -> Optional[str]:
+        return f"{self._platform_name}_connection_method"
+
+    @property
+    def available(self) -> bool:
+        return True
+
+    @property
+    def native_value(self) -> str:
+        return active_method()
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        return {"shared_connection_available": HAS_SHARED_CONNECTION}
