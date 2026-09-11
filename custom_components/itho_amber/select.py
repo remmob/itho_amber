@@ -1,6 +1,7 @@
 """platform for select integration."""
 
 from __future__ import annotations
+import asyncio
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.components.select import SelectEntity
 
@@ -99,6 +100,14 @@ def get_key(d, search):
             return k
     return None
 
+# After writing, wait for the coordinator's next read(s) to confirm the new
+# value before returning - Home Assistant writes entity state right after
+# select_option() returns, so returning early (before the write has been
+# read back) shows the old option for one refresh cycle before flipping to
+# the new one. Same fix already applied to switch.py's turn_on/turn_off.
+POLL_FREQUENCY_SECONDS = 15
+MAX_STATUS_CHANGE_TIME_SECONDS = 30
+
 class AmberSelectControlMode(CoordinatorEntity, SelectEntity):
     """Representation of a Amber Modbus select.""" 
 
@@ -150,10 +159,16 @@ class AmberSelectControlMode(CoordinatorEntity, SelectEntity):
     #         selected = EXTERNAL_CONTROL[value]
     #     return selected
     
-    def select_option(self, option) -> None:
+    async def async_select_option(self, option: str) -> None:
+        """Send the new option and wait for it to be confirmed by the next read."""
         address = int(self.entity_description.key)
         new_mode = get_key(self._options, option)
         self._hub.write_registers(address, int(new_mode))
+
+        for _ in range(MAX_STATUS_CHANGE_TIME_SECONDS // POLL_FREQUENCY_SECONDS):
+            await asyncio.sleep(POLL_FREQUENCY_SECONDS)
+            if self.coordinator.data.get(self.entity_description.key) == new_mode:
+                break
 
 class AmberSelectWorkingMode(CoordinatorEntity, SelectEntity):
     """Representation of a Amber Modbus select."""
@@ -206,10 +221,16 @@ class AmberSelectWorkingMode(CoordinatorEntity, SelectEntity):
     #         selected = CURRENT_WORKING_MODE[value]
     #     return selected
     
-    def select_option(self, option) -> None:
+    async def async_select_option(self, option: str) -> None:
+        """Send the new option and wait for it to be confirmed by the next read."""
         address = int(self.entity_description.key)
         new_mode = get_key(self._options, option)
         self._hub.write_registers(address, int(new_mode))
+
+        for _ in range(MAX_STATUS_CHANGE_TIME_SECONDS // POLL_FREQUENCY_SECONDS):
+            await asyncio.sleep(POLL_FREQUENCY_SECONDS)
+            if self.coordinator.data.get(self.entity_description.key) == new_mode:
+                break
 
 class AmberSelectHWTBHMode(CoordinatorEntity, SelectEntity):
     """Representation of a Amber Modbus select."""
@@ -262,10 +283,16 @@ class AmberSelectHWTBHMode(CoordinatorEntity, SelectEntity):
     #         selected = HWTBH_PRIORITY_MODE[value]
     #     return selected
     
-    def select_option(self, option) -> None:
+    async def async_select_option(self, option: str) -> None:
+        """Send the new option and wait for it to be confirmed by the next read."""
         address = int(self.entity_description.key)
         new_mode = get_key(self._options, option)
         self._hub.write_registers(address, int(new_mode))
+
+        for _ in range(MAX_STATUS_CHANGE_TIME_SECONDS // POLL_FREQUENCY_SECONDS):
+            await asyncio.sleep(POLL_FREQUENCY_SECONDS)
+            if self.coordinator.data.get(self.entity_description.key) == new_mode:
+                break
 
 class AmberSelectP0PumpMode(CoordinatorEntity, SelectEntity):
     """Representation of a Amber Modbus select."""
@@ -319,10 +346,16 @@ class AmberSelectP0PumpMode(CoordinatorEntity, SelectEntity):
     #         selected = PUMP_P0_WORKING_MODE[value]
     #     return selected
     
-    def select_option(self, option) -> None:
+    async def async_select_option(self, option: str) -> None:
+        """Send the new option and wait for it to be confirmed by the next read."""
         address = int(self.entity_description.key)
         new_mode = get_key(self._options, option)
         self._hub.write_registers(address, int(new_mode))
+
+        for _ in range(MAX_STATUS_CHANGE_TIME_SECONDS // POLL_FREQUENCY_SECONDS):
+            await asyncio.sleep(POLL_FREQUENCY_SECONDS)
+            if self.coordinator.data.get(self.entity_description.key) == new_mode:
+                break
 
 class AmberSelectP0PumpSpeed(CoordinatorEntity, SelectEntity):
     def __init__(self, platform_name, hub, device_info, description):
@@ -363,8 +396,14 @@ class AmberSelectP0PumpSpeed(CoordinatorEntity, SelectEntity):
     #     value = self.coordinator.data.get(self.entity_description.key)
     #     return PUMP_SPEED.get(value)
    
-    def select_option(self, option) -> None:
+    async def async_select_option(self, option: str) -> None:
+        """Send the new option and wait for it to be confirmed by the next read."""
         address = int(self.entity_description.key)
         new_mode = get_key(self._options, option)
-        
+
         self._hub.write_registers(address, int(new_mode))
+
+        for _ in range(MAX_STATUS_CHANGE_TIME_SECONDS // POLL_FREQUENCY_SECONDS):
+            await asyncio.sleep(POLL_FREQUENCY_SECONDS)
+            if self.coordinator.data.get(self.entity_description.key) == new_mode:
+                break
