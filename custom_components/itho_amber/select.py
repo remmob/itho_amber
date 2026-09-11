@@ -8,8 +8,6 @@ from homeassistant.const import CONF_NAME
 from homeassistant.core import callback
 import homeassistant.util.dt as dt_util
 
-from pymodbus.client import ModbusTcpClient
-
 from .const import (
     ATTR_MANUFACTURER,
     DOMAIN,
@@ -155,14 +153,7 @@ class AmberSelectControlMode(CoordinatorEntity, SelectEntity):
     def select_option(self, option) -> None:
         address = int(self.entity_description.key)
         new_mode = get_key(self._options, option)
-        self._hub.write_registers(
-            address,
-            ModbusTcpClient.convert_to_registers(
-                int(new_mode),
-                data_type=ModbusTcpClient.DATATYPE.INT16,
-                word_order="big",
-            ),
-        )
+        self._hub.write_registers(address, int(new_mode))
 
 class AmberSelectWorkingMode(CoordinatorEntity, SelectEntity):
     """Representation of a Amber Modbus select."""
@@ -218,14 +209,7 @@ class AmberSelectWorkingMode(CoordinatorEntity, SelectEntity):
     def select_option(self, option) -> None:
         address = int(self.entity_description.key)
         new_mode = get_key(self._options, option)
-        self._hub.write_registers(
-            address,
-            ModbusTcpClient.convert_to_registers(
-                int(new_mode),
-                data_type=ModbusTcpClient.DATATYPE.INT16,
-                word_order="big",
-            ),
-        )
+        self._hub.write_registers(address, int(new_mode))
 
 class AmberSelectHWTBHMode(CoordinatorEntity, SelectEntity):
     """Representation of a Amber Modbus select."""
@@ -281,14 +265,7 @@ class AmberSelectHWTBHMode(CoordinatorEntity, SelectEntity):
     def select_option(self, option) -> None:
         address = int(self.entity_description.key)
         new_mode = get_key(self._options, option)
-        self._hub.write_registers(
-            address,
-            ModbusTcpClient.convert_to_registers(
-                int(new_mode),
-                data_type=ModbusTcpClient.DATATYPE.INT16,
-                word_order="big",
-            ),
-        )
+        self._hub.write_registers(address, int(new_mode))
 
 class AmberSelectP0PumpMode(CoordinatorEntity, SelectEntity):
     """Representation of a Amber Modbus select."""
@@ -345,14 +322,7 @@ class AmberSelectP0PumpMode(CoordinatorEntity, SelectEntity):
     def select_option(self, option) -> None:
         address = int(self.entity_description.key)
         new_mode = get_key(self._options, option)
-        self._hub.write_registers(
-            address,
-            ModbusTcpClient.convert_to_registers(
-                int(new_mode),
-                data_type=ModbusTcpClient.DATATYPE.INT16,
-                word_order="big",
-            ),
-        )
+        self._hub.write_registers(address, int(new_mode))
 
 class AmberSelectP0PumpSpeed(CoordinatorEntity, SelectEntity):
     def __init__(self, platform_name, hub, device_info, description):
@@ -397,11 +367,4 @@ class AmberSelectP0PumpSpeed(CoordinatorEntity, SelectEntity):
         address = int(self.entity_description.key)
         new_mode = get_key(self._options, option)
         
-        self._hub.write_registers(
-            address,
-            ModbusTcpClient.convert_to_registers(
-                int(new_mode),
-                data_type=ModbusTcpClient.DATATYPE.INT16,
-                word_order="big",
-            ),
-        )
+        self._hub.write_registers(address, int(new_mode))

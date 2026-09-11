@@ -7,7 +7,6 @@ from homeassistant.components.number import NumberEntity
 
 from homeassistant.const import CONF_NAME
 import homeassistant.util.dt as dt_util
-from pymodbus.client import ModbusTcpClient
 
 from .const import (
     ATTR_MANUFACTURER,
@@ -118,7 +117,4 @@ class AmberNumber(CoordinatorEntity, NumberEntity):
     def set_native_value(self, value: int) -> None:
         """Set new value and write to modbus."""
         address = int(self.entity_description.key)
-        payload = ModbusTcpClient.convert_to_registers(int(value), 
-        data_type=ModbusTcpClient.DATATYPE.INT16, word_order="big")
-       
-        self._hub.write_registers(address, payload)
+        self._hub.write_registers(address, int(value))

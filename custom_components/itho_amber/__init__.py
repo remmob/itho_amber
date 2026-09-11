@@ -7,7 +7,6 @@ from homeassistant.helpers.translation import async_get_translations
 from importlib.metadata import version as get_version
 from packaging.version import Version
 
-import pymodbus
 import logging
 import asyncio
 
@@ -19,6 +18,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PORT, CONF_SCAN_INTERVAL
 from homeassistant.core import HomeAssistant
 
+from . import connection
 from .repairs import async_migrate_temperature_typo
 
 from .const import (
@@ -105,8 +105,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.data[DOMAIN] = {}
 
     name = entry.data.get("name")
-    host = entry.data.get("host")
-    port = entry.data.get("port")
     scan_interval = entry.data.get("scan_interval")
     
     # Connection error notification settings
@@ -127,7 +125,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     _LOGGER.debug(f"Alarm delay configured: {alarm_delay} seconds")
 
     _LOGGER.info("Setting up %s.%s", DOMAIN, name)
-    _LOGGER.debug(f"Used pymodbus version: {pymodbus.__version__}")
     _LOGGER.debug(f"Required Home Assistant version: {REQUIRED_VERSION}")
     _LOGGER.debug(f"Detected Home Assistant version: {ha_version}")
 
@@ -135,7 +132,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.warning("Config entry %s is already set up!", name)
         return False
 
-    hub = AmberModbusHub(hass, name, host, port, scan_interval, notify_connection_errors_mobile, notify_connection_errors_persistent, notify_connection_errors_services, connection_error_notification_title, connection_error_delay)
+    params = connection.build_params(entry.data)
+    unit = connection.async_setup_unit(hass, entry, params, unit_id=1)
+    _LOGGER.info("%s is using connection method: %s", name, connection.active_method())
+
+    hub = AmberModbusHub(hass, name, unit, scan_interval, notify_connection_errors_mobile, notify_connection_errors_persistent, notify_connection_errors_services, connection_error_notification_title, connection_error_delay)
     await hub.async_config_entry_first_refresh()
 
     # Create alarm monitor

@@ -1,16 +1,30 @@
-"""Itho Daalderop Amber 65/95/120 Modbus Hub/coordinator."""
+"""Itho Daalderop Amber 65/95/120 Modbus Hub/coordinator.
 
-import time
-import logging
-import threading
+Uses the shared async `modbus_connection`/`tmodbus` transport (see
+connection.py) instead of a synchronous pymodbus client - the coordinator
+now runs natively in the event loop, so no `hass.async_add_executor_job`
+wrapping is needed for reads anymore.
+
+Writes are still triggered from synchronous entity methods (number.py's
+`set_native_value`, select.py's `select_option`), which Home Assistant runs
+in a worker thread. `write_registers()` stays a plain, thread-safe entry
+point: it hands the actual queueing off to the event loop via
+`hass.loop.call_soon_threadsafe`, which is safe to call from any thread
+(including the event loop thread itself, e.g. from switch.py's async
+methods). Once queued, everything - debounce, dedup, flush - runs only on
+the event loop, so none of it needs a lock.
+"""
+
+from __future__ import annotations
+
 import asyncio
-import traceback
+import logging
 from datetime import timedelta, datetime
 
-from pymodbus.client import ModbusTcpClient
-from pymodbus.exceptions import ConnectionException, ModbusIOException
+from modbus_connection import ModbusError, ModbusTimeoutError, ModbusUnit
 from homeassistant.components.persistent_notification import async_create as create_persistent_notification
 from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
+from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.core import CALLBACK_TYPE, callback, HomeAssistant
 
@@ -23,23 +37,23 @@ _LOGGER = logging.getLogger(__name__)
 
 MAX_READ_RETRIES = 3
 
-class AmberModbusHub(DataUpdateCoordinator[dict]):
-    """Thread safe wrapper class for pymodbus."""
+# How long to wait after the last queued write before flushing (coalesces
+# rapid-fire changes, e.g. a slider being dragged, into one write burst).
+WRITE_DEBOUNCE_SECONDS = 0.7
 
-    def __init__(self, hass: HomeAssistant, name: str, host: str, port: int | float, scan_interval: int | float, notify_connection_errors_mobile: bool = False, notify_connection_errors_persistent: bool = False, notify_services: str = "", notification_title: str = "Warmtepomp verbindingsfout!", connection_error_delay: int = 60):
+class AmberModbusHub(DataUpdateCoordinator[dict]):
+    """Coordinator that polls/controls an Itho Amber heat pump over a Modbus unit."""
+
+    def __init__(self, hass: HomeAssistant, name: str, unit: ModbusUnit, scan_interval: int | float, notify_connection_errors_mobile: bool = False, notify_connection_errors_persistent: bool = False, notify_services: str = "", notification_title: str = "Warmtepomp verbindingsfout!", connection_error_delay: int = 60):
         """Initialize the Itho Daalderop Amber 65/95/120 Modbus hub."""
         super().__init__(hass, _LOGGER, name=name, update_interval=timedelta(seconds=scan_interval))
 
+        self._unit = unit
         self._flush_running = False
         self._flush_pending = False
         self._ha_started = False
-        self._write_queue = []
-        self._write_timer = None
-        self._modbus_lock = threading.Lock()
-        self._lock = threading.Lock()
-        self._client = None
-        self._host = host
-        self._port = int(port)
+        self._write_queue: list[tuple[int, int]] = []
+        self._write_timer_cancel: CALLBACK_TYPE | None = None
         self._consecutive_failures = 0  # Track consecutive connection failures
         self._last_successful_read = None  # Track last time we got valid data
         self._notify_connection_errors_mobile = notify_connection_errors_mobile
@@ -53,7 +67,7 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         # Calculate how many failures based on configured delay and scan_interval
         self._failures_for_delay = max(1, int(connection_error_delay / scan_interval))
         _LOGGER.debug(f"Connection error notification will be sent after {self._failures_for_delay} failures ({connection_error_delay}s / {scan_interval}s)")
-        
+
         # Use persistent storage in hass.data - survives reloads
         storage_key = f"{name}_data_store"
         if storage_key not in hass.data:
@@ -67,139 +81,68 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         self._ha_started = False
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STARTED, self._on_ha_started)
 
-        try:
-            self._client = ModbusTcpClient(host=host, port=port, timeout=60)
-            _LOGGER.debug(f"Modbus client initialized for {host}:{port}")
-        except Exception as e:
-            _LOGGER.exception(f"Failed to initialize Modbus client: {e}")
-
     def _on_ha_started(self, event):
         """Callback fired when Home Assistant has fully started."""
         self._ha_started = True
         _LOGGER.debug("Home Assistant startup complete")
 
-    @callback
-    def async_remove_listener(self, update_callback: CALLBACK_TYPE) -> None:
-        """Remove data update listener and close connection if no listeners remain."""
-        super().async_remove_listener(update_callback)
-        _LOGGER.debug("Removed update listener")
-
-        # If no listeners remain, close the Modbus connection
-        if not self._listeners:
-            _LOGGER.debug("No listeners left, closing Modbus connection")
-            try:
-                self.close()
-            except Exception as e:
-                _LOGGER.exception(f"Error while closing the connection: {e}")
-
     def close(self) -> None:
-        """Disconnect client."""
-        try:
-            with self._lock:
-                if self._client is not None:
-                    self._client.close()
-                    self._client = None
-            _LOGGER.debug("Modbus client connection closed")
-        except Exception as e:
-            _LOGGER.exception(f"Error closing Modbus connection: {e}")
+        """Nothing to close directly.
 
-    def _read_holding_registers(self, unit, address, count):
-        """Safely read holding registers with reconnection logic."""
-        # Block ALL reads during write flush
+        The Modbus connection itself is not ours to close: connection.py
+        registered its own teardown (entry.async_on_unload) when the unit
+        was set up, whether that is Home Assistant's shared connection or
+        one we opened ourselves.
+        """
+
+    # --- Low-level read -----------------------------------------------------
+
+    async def _read_range(self, address: int, count: int) -> tuple[list[int] | None, bool]:
+        """Read `count` holding registers starting at `address`.
+
+        Retries transient failures up to MAX_READ_RETRIES times. Returns
+        (registers, timed_out).
+        """
+        # Block ALL reads during write flush, same as before the migration.
         if self._flush_running:
             _LOGGER.debug("Read skipped because write flush is running")
-            return None
-        
-        try:
-            # Ensure connection is alive
-            if self._client is None or not self._client.connected:
-                if not self._ha_started:
-                    _LOGGER.debug("Modbus client not yet connected (HA still starting)")
-                else:
-                    _LOGGER.warning("Modbus client not connected, attempting reconnect...")
+            return None, False
 
-                # Close existing client if any
-                if self._client is not None:
-                    try:
-                        self._client.close()
-                    except Exception:
-                        pass
-                    self._client = None
+        if not self._ha_started:
+            _LOGGER.debug("Modbus read attempted before HA startup complete")
 
-                # Create new client
-                try:
-                    self._client = ModbusTcpClient(host=self._host, port=self._port, timeout=60)
-                except Exception as e:
-                    _LOGGER.exception(f"Failed to create new Modbus client: {e}")
-                    return None
+        timed_out = False
 
-                if not self._client.connect():
-                    _LOGGER.error("Modbus reconnect failed")
-                    return None
-
-            with self._modbus_lock:
-                resp = self._client.read_holding_registers(
-                    address=address,
-                    count=count,
-                    device_id=unit
+        for attempt in range(MAX_READ_RETRIES):
+            try:
+                registers = await self._unit.read_holding_registers(address, count)
+                _LOGGER.debug(f"Successfully read {len(registers)} registers from {address}-{address + count - 1}")
+                self._last_successful_read = datetime.now()
+                return registers, False
+            except ModbusTimeoutError as err:
+                timed_out = True
+                _LOGGER.warning(
+                    f"Attempt {attempt + 1}/{MAX_READ_RETRIES} timed out for range {address}-{address + count - 1}: {err}"
                 )
-
-            # No response received
-            if resp is None:
-                _LOGGER.error(
-                    f"Modbus returned no response for address {address}-{address+count-1}"
+            except ModbusError as err:
+                timed_out = False
+                _LOGGER.warning(
+                    f"Attempt {attempt + 1}/{MAX_READ_RETRIES} failed for range {address}-{address + count - 1}: {err}"
                 )
-                return None
+            if attempt < MAX_READ_RETRIES - 1:
+                await asyncio.sleep(0.5)
 
-            # Modbus returned an error frame
-            if resp.isError():
-                _LOGGER.error(
-                    f"Modbus error reading registers {address}-{address+count-1}: {resp}"
-                )
-                # Force reconnect bij error frames - mogelijk gateway/warmtepomp communicatie probleem
-                # Dit helpt wanneer de IP-gateway nog bereikbaar is maar niet met de warmtepomp kan communiceren
-                _LOGGER.warning("Forcing reconnect due to Modbus error frame")
-                if self._client is not None:
-                    try:
-                        self._client.close()
-                    except Exception:
-                        pass
-                    self._client = None
-                return None
+        return None, timed_out
 
-            # Response object exists but contains no registers
-            if not hasattr(resp, "registers"):
-                _LOGGER.error(
-                    f"Modbus response missing registers for {address}-{address+count-1}"
-                )
-                return None
-            _LOGGER.debug( f"Successfully read {len(resp.registers)} registers from {address}-{address+count-1}" )
-            
-            # Update last successful read timestamp
-            self._last_successful_read = datetime.now()
-            
-            return resp
+    @staticmethod
+    def _to_signed16(values: list[int]) -> list[int]:
+        """Reinterpret raw (unsigned) 16-bit registers as signed INT16 values.
 
-        except (ConnectionException, ModbusIOException, ConnectionResetError, BrokenPipeError, OSError) as e:
-            # Expected communication‑related errors
-            _LOGGER.error(
-                f"Modbus communication error while reading {address}-{address+count-1}: {e}"
-            )
-            # Mark client as disconnected to force reconnect on next attempt
-            if self._client is not None:
-                try:
-                    self._client.close()
-                except Exception:
-                    pass
-                self._client = None
-            return None
-
-        except Exception as e:
-            # Unexpected internal errors (kept visible with full traceback)
-            _LOGGER.exception(
-                f"Unexpected error while reading registers {address}-{address+count-1}: {e}"
-            )
-            return None
+        Equivalent to what `ModbusTcpClient.convert_from_registers(...,
+        data_type=DATATYPE.INT16)` did before this integration used
+        pymodbus - each register above 0x7FFF becomes negative.
+        """
+        return [v - 0x10000 if v > 0x7FFF else v for v in values]
 
     async def _async_update_data(self) -> dict:
         """Fetch Modbus data safely with clear logging and consistent return handling."""
@@ -210,13 +153,8 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
                 _LOGGER.warning(
                     f"No successful reads for {int(time_since_success)}s (>5min), forcing reconnect"
                 )
-                if self._client is not None:
-                    try:
-                        self._client.close()
-                    except Exception:
-                        pass
-                    self._client = None
-        
+                await self._unit.disconnect()
+
         # Start with previous data - only overwrite if we get new data
         data: dict = {
             **self.data_store.get("setting_data", {}),
@@ -226,12 +164,7 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         failed_details = []
 
         # --- Read settings data ---
-        settings_result = await self.hass.async_add_executor_job(self.read_modbus_setting_data)
-        if isinstance(settings_result, tuple):
-            settings, settings_failed_ranges = settings_result
-        else:
-            settings = settings_result
-            settings_failed_ranges = []
+        settings, settings_failed_ranges = await self.read_modbus_setting_data()
 
         if settings is None:
             # Read skipped/failed (e.g. due to write flush) -> keep previous values
@@ -258,12 +191,7 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         data.update(settings)
 
         # --- Read realtime data ---
-        realtime_result = await self.hass.async_add_executor_job(self.read_modbus_realtime_data)
-        if isinstance(realtime_result, tuple):
-            realtime, realtime_failed_ranges = realtime_result
-        else:
-            realtime = realtime_result
-            realtime_failed_ranges = []
+        realtime, realtime_failed_ranges = await self.read_modbus_realtime_data()
 
         if realtime is None:
             _LOGGER.debug("Realtime read failed or skipped, keeping previous values")
@@ -306,7 +234,7 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
             if self._consecutive_failures == 1:
                 self._connection_lost_time = datetime.now()
             _LOGGER.debug(f"Consecutive failures: {self._consecutive_failures}/{self._failures_for_delay}, notified: {self._connection_error_notified}, mobile: {self._notify_connection_errors_mobile}, persistent: {self._notify_connection_errors_persistent}")
-            
+
             # Send notification after configured delay of consecutive failures
             if self._consecutive_failures >= self._failures_for_delay and (self._notify_connection_errors_mobile or self._notify_connection_errors_persistent) and not self._connection_error_notified:
                 # Format timestamp
@@ -314,21 +242,21 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
                     lost_time = self._connection_lost_time.strftime("%d-%m-%Y %H:%M:%S")
                 else:
                     lost_time = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
-                
+
                 message_nl = f"Communicatie met de Amber verloren sinds {lost_time}"
                 message_en = f"Communication with the Amber lost since {lost_time}"
-                
+
                 _LOGGER.info(f"Sending connection error notification after {self._consecutive_failures} failures ({self._consecutive_failures * self.update_interval.total_seconds():.0f}s). notify_services: '{self._notify_services}'")
-                
+
                 # Send persistent notification if enabled
                 if self._notify_connection_errors_persistent:
                     create_persistent_notification(
-                        self.hass, 
-                        message_nl, 
+                        self.hass,
+                        message_nl,
                         self._notification_title,
                         "itho_amber_connection_error"
                     )
-                
+
                 # Send to mobile apps if configured
                 if self._notify_connection_errors_mobile and self._notify_services:
                     services = [s.strip() for s in self._notify_services.split(',') if s.strip()]
@@ -346,9 +274,9 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
                 else:
                     if self._notify_connection_errors_mobile:
                         _LOGGER.warning(f"No notify services configured for connection errors, skipping mobile notifications")
-                
+
                 self._connection_error_notified = True
-                
+
         elif connection_status == "OK":
             # Reset failure counter on success
             if self._consecutive_failures > 0:
@@ -359,34 +287,26 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
             self._connection_error_notified = False
             # Keep partial failure tracking to avoid re-notifying on same issues
 
-                
+
         return data
 
-    def read_modbus_setting_data(self) -> tuple[dict, int]:
+    async def read_modbus_setting_data(self) -> tuple[dict | None, list[tuple[int, int]]]:
         """Read all settings data."""
         ranges = [
             (0, 60), (60, 60), (120, 50), (170, 50),
             (314, 11), (334, 7), (375, 2), (407, 53)
         ]
-        all_registers = []
-        failed_ranges = []
+        all_registers: list[int] = []
+        failed_ranges: list[tuple[int, int]] = []
 
         _LOGGER.debug("Start reading settings data")
 
         for start, count in ranges:
-            success = False
-            for attempt in range(MAX_READ_RETRIES):
-                resp = self._read_holding_registers(unit=1, address=start, count=count)
-                if resp is not None and not resp.isError() and hasattr(resp, "registers") and len(resp.registers) >= count:
-                    all_registers.extend(resp.registers)
-                    _LOGGER.debug(f"Read {len(resp.registers)} registers from {start}-{start+count-1} on attempt {attempt+1}")
-                    success = True
-                    break
-                else:
-                    _LOGGER.warning(f"Attempt {attempt+1} failed for range {start}-{start+count-1}")
-                    time.sleep(0.5)  # Short delay between retries
-
-            if not success:
+            registers, _timed_out = await self._read_range(start, count)
+            if registers is not None and len(registers) >= count:
+                all_registers.extend(registers[:count])
+                _LOGGER.debug(f"Read {len(registers)} registers from {start}-{start+count-1}")
+            else:
                 _LOGGER.error(f"Failed to read range {start}-{start+count-1} after {MAX_READ_RETRIES} attempts")
                 failed_ranges.append((start, count))
                 # Skip this range and continue with others
@@ -402,9 +322,7 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
 
         # --- Decode phase ---
         try:
-            newdecoder = ModbusTcpClient.convert_from_registers(
-                all_registers, data_type=ModbusTcpClient.DATATYPE.INT16
-            )
+            newdecoder = self._to_signed16(all_registers)
 
             data = {}
             register_map = {}
@@ -457,32 +375,24 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
             _LOGGER.exception(f"Unexpected error decoding settings data: {e}")
             return {}, failed_ranges
 
-    def read_modbus_realtime_data(self) -> tuple[dict, int]:
+    async def read_modbus_realtime_data(self) -> tuple[dict | None, list[tuple[int, int]]]:
         """Read realtime sensor values."""
         ranges = [
             (499, 48),
             (703, 13)
         ]
-        all_registers = []
-        failed_ranges = []
+        all_registers: list[int] = []
+        failed_ranges: list[tuple[int, int]] = []
 
         _LOGGER.debug("Start reading realtime data")
 
         # --- Read all Modbus ranges ---
         for start, count in ranges:
-            success = False
-            for attempt in range(MAX_READ_RETRIES):
-                resp = self._read_holding_registers(unit=1, address=start, count=count)
-                if resp is not None and not resp.isError() and hasattr(resp, "registers") and len(resp.registers) >= count:
-                    all_registers.extend(resp.registers)
-                    _LOGGER.debug(f"Read {len(resp.registers)} registers from {start}-{start+count-1} on attempt {attempt+1}")
-                    success = True
-                    break
-                else:
-                    _LOGGER.warning(f"Attempt {attempt+1} failed for range {start}-{start+count-1}")
-                    time.sleep(0.5)
-
-            if not success:
+            registers, _timed_out = await self._read_range(start, count)
+            if registers is not None and len(registers) >= count:
+                all_registers.extend(registers[:count])
+                _LOGGER.debug(f"Read {len(registers)} registers from {start}-{start+count-1}")
+            else:
                 _LOGGER.error(f"Failed to read range {start}-{start+count-1} after {MAX_READ_RETRIES} attempts")
                 failed_ranges.append((start, count))
 
@@ -495,9 +405,7 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
 
         # --- Decode phase ---
         try:
-            newdecoder = ModbusTcpClient.convert_from_registers(
-                all_registers, data_type=ModbusTcpClient.DATATYPE.INT16
-            )
+            newdecoder = self._to_signed16(all_registers)
 
             data = {}
 
@@ -675,20 +583,29 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         except Exception as e:
             _LOGGER.exception(f"Unexpected error decoding realtime data: {e}")
             return {}, failed_ranges
-    
+
     def get_highest_bit_message(self, register_value: int, bit_messages: dict) -> str:
         highest_bit = max((bit for bit in bit_messages if register_value & (1 << bit)), default=None)
         return bit_messages[highest_bit] if highest_bit is not None else ""
 
+    # --- Writes --------------------------------------------------------------
+    #
+    # write_registers() is called from both async entity methods running on
+    # the event loop (switch.py) and plain sync ones HA runs in a worker
+    # thread (number.py, select.py). `call_soon_threadsafe` is safe from
+    # either context, so it's the single hand-off point onto the event loop;
+    # everything past that (queueing, the debounce timer, the flush) only
+    # ever runs on the loop and needs no lock.
+
     def write_registers(self, address: int, value) -> None:
-        """Queue register writes and coalesce them within 400ms."""
+        """Queue register writes and coalesce them within WRITE_DEBOUNCE_SECONDS."""
         try:
             # Normalize list payloads
             if isinstance(value, list):
                 if len(value) == 1:
-                    value = value[0]  # [31] → 31
+                    value = value[0]  # [31] -> 31
                 else:
-                    # Multiple values → sequential writes
+                    # Multiple values -> sequential writes
                     for i, v in enumerate(value):
                         self.write_registers(address + i, v)
                     return
@@ -696,19 +613,30 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
             # Force to int (HA sometimes sends strings/floats)
             value = int(value)
 
-            with self._lock:
-                self._write_queue.append((address, value))
-
-                if self._write_timer is not None:
-                    self._write_timer.cancel()
-
-                self._write_timer = threading.Timer(0.7, self._flush_write_queue)
-                self._write_timer.start()
+            self.hass.loop.call_soon_threadsafe(self._queue_write, address, value)
 
         except Exception as e:
             _LOGGER.exception(f"Unexpected error queuing write: {e}")
 
-    def _flush_write_queue(self):
+    @callback
+    def _queue_write(self, address: int, value: int) -> None:
+        """Add a write to the queue and (re)start the debounce timer. Event-loop only."""
+        self._write_queue.append((address, value))
+
+        if self._write_timer_cancel is not None:
+            self._write_timer_cancel()
+
+        self._write_timer_cancel = async_call_later(
+            self.hass, WRITE_DEBOUNCE_SECONDS, self._start_flush
+        )
+
+    @callback
+    def _start_flush(self, _now=None) -> None:
+        """Kick off the async flush task. Event-loop only."""
+        self._write_timer_cancel = None
+        self.hass.async_create_task(self._flush_write_queue())
+
+    async def _flush_write_queue(self) -> None:
         """Write all queued registers sequentially, then refresh."""
         # If a flush is already running, mark that another flush is needed
         if self._flush_running:
@@ -720,17 +648,16 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
 
         try:
             while True:
-                with self._lock:
-                    # Deduplicate: last write per address wins
-                    dedup = {}
-                    for addr, val in self._write_queue:
-                        dedup[addr] = val
+                # Deduplicate: last write per address wins. Safe without a
+                # lock - nothing awaits between reading and clearing the
+                # queue, so no other coroutine on this loop can interleave.
+                dedup = {}
+                for addr, val in self._write_queue:
+                    dedup[addr] = val
 
-                    writes = list(dedup.items())
-
-                    self._write_queue = []
-                    self._write_timer = None
-                    self._flush_pending = False
+                writes = list(dedup.items())
+                self._write_queue = []
+                self._flush_pending = False
 
                 # No writes? Stop.
                 if not writes:
@@ -738,24 +665,19 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
 
                 # Perform writes
                 for address, value in writes:
-                    with self._modbus_lock:
-                        result = self._client.write_register(address, value, device_id=1)
-
-                    if result.isError():
-                        _LOGGER.error(f"Modbus write failed at address {address} with value {value}")
+                    try:
+                        await self._unit.write_register(address, value & 0xFFFF)
+                    except ModbusError as err:
+                        _LOGGER.error(f"Modbus write failed at address {address} with value {value}: {err}")
                         continue
 
                     _LOGGER.debug(f"Successfully wrote to register {address} with value {value}")
-                    time.sleep(0.1)
+                    await asyncio.sleep(0.1)
 
                 # Allow heat pump to process
-                time.sleep(2)
+                await asyncio.sleep(2)
 
-                # Refresh HA
-                self.hass.loop.call_soon_threadsafe(
-                    lambda: asyncio.create_task(self.async_request_refresh())
-                )
-                self.hass.loop.call_soon_threadsafe(self._schedule_refresh)
+                await self.async_request_refresh()
 
                 # If new writes arrived during flush, loop again
                 if not self._flush_pending:
@@ -766,4 +688,3 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
 
         finally:
             self._flush_running = False
-  
