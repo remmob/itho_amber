@@ -104,7 +104,7 @@ ALARM_SENSORS = [
     "p01_main_line_current_protection",
     "p02_compressor_phase_current_protection",
     "p03_ipm_module_protection",
-    "p04_compresor_oil_return_protection",
+    "p04_compressor_oil_return_protection",
     "p05_high_pressure_refrigerant_circuit",
     "p06_very_high_pressure_refrigerant_circuit",
     "p07_pre_heat_compressor",
@@ -113,18 +113,18 @@ ALARM_SENSORS = [
     "p10_main_voltage_protection",
     "p11_compressor_stop_ambient_temperature",
     "p12_frequency_limit_compressor",
-    "p13_low_pressure_condensor_pressure_switch",
+    "p13_low_pressure_condenser_pressure_switch",
     # F errors (1 minute delay)
     "f01_failure_ambient_temperature_sensor_ta",
     "f02_failure_outdoor_temperature_sensor_tp",
-    "f03_failure_compressor_discharge_temperature_sensor_tp",
+    "f03_failure_compressor_discharge_temperature_sensor_td",
     "f04_failure_compressor_suction_temperature_sensor_ts",
-    "f05_failure_evporating_pressure_sensor_ps",
+    "f05_failure_evaporating_pressure_sensor_ps",
     "f06_failure_high_pressure_sensor_pd",
     "f07_failure_high_pressure_switch",
     "f09_failure_a_fan_motor",
     "f10_failure_b_fan_motor",
-    "f11_evporating_pressure_failure_ps",
+    "f11_evaporating_pressure_failure_ps",
     "f12_high_pressure_failure_pd",
     "f13_room_temperature_sensor_failure_tr",
     "f14_failure_dhw_tank_temperature_sensor_tw",
@@ -140,14 +140,14 @@ ALARM_SENSORS = [
     "f29_failure_3_way_valve_zone1",
     "f30_failure_3_way_valve_zone2",
     # E errors (1 minute delay)
-    "e01_comm_failure_lcd_indoorunit",
+    "e01_comm_failure_lcd_indoor_unit",
     "e02_failure_outdoor_pcb_compressor_inverter",
     "e03_power_failure_compressor",
     "e04_overcurrent_protection_compressor",
     "e05_compressor_driver_failure",
     "e06_vdc_unit_failure",
     "e07_ac_current_failure",
-    "e08_eeprom_failure_oudoor_unit",
+    "e08_eeprom_failure_outdoor_unit",
     # S errors (1 minute delay, except S06/S07 which need 5 minutes)
     "s01_cooling_anti_freezing_protection",
     "s02_low_flow_warning",
@@ -183,9 +183,9 @@ CURRENT_OPERATION_MODE = {
 
 EXTERNAL_CONTROL = {
     0: "Off",
-    1: "Outside temperture",
+    1: "Outside temperature",
     2: "Ext. On/Off",
-    3: "Ext. On/Off + Outside temperture" 
+    3: "Ext. On/Off + Outside temperature" 
 }
 
 CURRENT_WORKING_MODE = { 
@@ -256,19 +256,19 @@ class AmberModbusSensorEntityDescription(SensorEntityDescription):
 SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
     #Settings data
     "9": AmberModbusSensorEntityDescription(
-        name="room temperature sensor",
+        name="Room temperature sensor",
         key="9",
         icon="mdi:toggle-switch-off-outline",
         entity_registry_enabled_default=True,
     ),
     "18": AmberModbusSensorEntityDescription(
-        name="timer heating and cooling",
+        name="Timer heating and cooling",
         key="18",
         icon="mdi:clock-outline",
         entity_registry_enabled_default=True,
     ),
     "49": AmberModbusSensorEntityDescription(
-        name="legionella setpoint",
+        name="Legionella setpoint",
         key="49",
         icon="mdi:water-thermometer-outline",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -278,7 +278,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "50": AmberModbusSensorEntityDescription(
-        name="legionella duration",
+        name="Legionella duration",
         key="50",
         icon="mdi:timer-outline",
         native_unit_of_measurement="Min",
@@ -287,7 +287,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "51": AmberModbusSensorEntityDescription(
-        name="legionella max elapsed time",
+        name="Legionella max elapsed time",
         key="51",
         icon="mdi:timer-outline",
         native_unit_of_measurement="Min",
@@ -297,7 +297,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
     ),
     "62": AmberModbusSensorEntityDescription(
         # Tijdsinterval tapwatertemperatuur ∆T=+1°C
-        name="temperature rise interval hwtbh",
+        name="Temperature rise interval hwtbh",
         key="62",
         icon="mdi:timer-outline",
         native_unit_of_measurement="Min",
@@ -306,13 +306,13 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "66": AmberModbusSensorEntityDescription(
-        name="shifting priority dhw",
+        name="Shifting priority dhw",
         key="66",
         icon="mdi:toggle-switch-off-outline",
         entity_registry_enabled_default=True,
     ),
     "67": AmberModbusSensorEntityDescription(
-        name="shifting priority dhw temperature",
+        name="Shifting priority dhw temperature",
         key="67",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
@@ -321,7 +321,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "68": AmberModbusSensorEntityDescription(
-        name="min heating time dhw",
+        name="Min heating time dhw",
         key="68",
         icon="mdi:timer-outline",
         native_unit_of_measurement="Min",
@@ -330,7 +330,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "69": AmberModbusSensorEntityDescription(
-        name="max cv heating time in dhw mode",
+        name="Max cv heating time in dhw mode",
         key="69",
         icon="mdi:timer-outline",
         native_unit_of_measurement="Min",
@@ -339,7 +339,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "70": AmberModbusSensorEntityDescription(
-        name="shifting priority temperature diff",
+        name="Shifting priority temperature diff",
         key="70",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
@@ -348,19 +348,19 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "71": AmberModbusSensorEntityDescription(
-        name="backup heater shifting priority",
+        name="Backup heater shifting priority",
         key="71",
         icon="mdi:toggle-switch-off-outline",
         entity_registry_enabled_default=True,
     ),
     "73": AmberModbusSensorEntityDescription(
-        name="min temperature timer dhw",
+        name="Min temperature timer dhw",
         key="73",
         icon="mdi:toggle-switch-off-outline",
         entity_registry_enabled_default=True,
     ),
     "74": AmberModbusSensorEntityDescription(
-        name="min temperature setpoint dhw",
+        name="Min temperature setpoint dhw",
         key="74",
         icon="mdi:water-thermometer-outline",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -370,7 +370,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "75": AmberModbusSensorEntityDescription(
-        name="restart min temperature dhw",
+        name="Restart min temperature dhw",
         key="75",
         icon="mdi:water-thermometer-outline",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -380,13 +380,13 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "119": AmberModbusSensorEntityDescription(
-        name="cv contact",
+        name="CV contact",
         key="119",
         icon="mdi:gas-burner",
         entity_registry_enabled_default=True,
     ),
     "121": AmberModbusSensorEntityDescription(
-        name="hbh during electrical utility lock",
+        name="HBH during electrical utility lock",
         key="121",
         icon="mdi:flash-triangle-outline",
         entity_registry_enabled_default=True,
@@ -398,7 +398,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "126": AmberModbusSensorEntityDescription(
-        name="system display on time",
+        name="System display on time",
         key="126",
         icon="mdi:timer-outline",
         entity_registry_enabled_default=True,
@@ -416,7 +416,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "144": AmberModbusSensorEntityDescription(
-        name="mixing valve zone 2",
+        name="Mixing valve zone 2",
         key="144",
         icon="mdi:pipe-valve",
         entity_registry_enabled_default=True,
@@ -458,7 +458,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "158": AmberModbusSensorEntityDescription(
-        name="outside start temperature frost protection first stage",
+        name="Outside start temperature frost protection first stage",
         key="158",
         icon="mdi:snowflake-thermometer",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -468,7 +468,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "159": AmberModbusSensorEntityDescription(
-        name="outside start temperature frost protection second stage",
+        name="Outside start temperature frost protection second stage",
         key="159",
         icon="mdi:snowflake-thermometer",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -478,7 +478,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "160": AmberModbusSensorEntityDescription(
-        name="outside stop temperature frost protection first stage",
+        name="Outside stop temperature frost protection first stage",
         key="160",
         icon="mdi:snowflake-thermometer",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -488,7 +488,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "161": AmberModbusSensorEntityDescription(
-        name="water start temperature frost protection second stage",
+        name="Water start temperature frost protection second stage",
         key="161",
         icon="mdi:water-thermometer-outline",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -498,7 +498,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "162": AmberModbusSensorEntityDescription(
-        name="water stop temperature frost protection second stage",
+        name="Water stop temperature frost protection second stage",
         key="162",
         icon="mdi:water-thermometer-outline",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -508,7 +508,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "189": AmberModbusSensorEntityDescription(
-        name="fan speed limit",
+        name="Fan speed limit",
         key="189",
         icon="mdi:fan",
         native_unit_of_measurement="%",
@@ -517,25 +517,25 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "202": AmberModbusSensorEntityDescription(
-        name="mode signal output",
+        name="Mode signal output",
         key="202",
         icon="mdi:toggle-switch-off-outline",
         entity_registry_enabled_default=True,
     ),
     "203": AmberModbusSensorEntityDescription(
-        name="mode signal type",
+        name="Mode signal type",
         key="203",
         icon="mdi:toggle-switch-off-outline",
         entity_registry_enabled_default=True,
     ),
     "218": AmberModbusSensorEntityDescription(
-        name="block external heating on outsidetemperature",
+        name="Block external heating on outside temperature",
         key="218",
         icon="mdi:toggle-switch-off-outline",
         entity_registry_enabled_default=True,
     ),
     "219": AmberModbusSensorEntityDescription(
-        name="setpoint block external heating on outsidetemperature",
+        name="Setpoint block external heating on outside temperature",
         key="219",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
@@ -544,7 +544,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "314": AmberModbusSensorEntityDescription(
-        name="coolcurve outside temperature 1",
+        name="Coolcurve outside temperature 1",
         key="314",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
@@ -553,7 +553,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "315": AmberModbusSensorEntityDescription(
-        name="coolcurve outside temperature 2",
+        name="Coolcurve outside temperature 2",
         key="315",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
@@ -562,7 +562,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "316": AmberModbusSensorEntityDescription(
-        name="coolcurve outside temperature 3",
+        name="Coolcurve outside temperature 3",
         key="316",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
@@ -571,7 +571,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "317": AmberModbusSensorEntityDescription(
-        name="coolcurve 1 setpoint 1",
+        name="Coolcurve 1 setpoint 1",
         key="317",
         icon="mdi:water-thermometer-outline",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -581,7 +581,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "318": AmberModbusSensorEntityDescription(
-        name="coolcurve 1 setpoint 2",
+        name="Coolcurve 1 setpoint 2",
         key="318",
         icon="mdi:water-thermometer-outline",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -591,7 +591,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "319": AmberModbusSensorEntityDescription(
-        name="coolcurve 1 setpoint 3",
+        name="Coolcurve 1 setpoint 3",
         key="319",
         icon="mdi:water-thermometer-outline",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -601,13 +601,13 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "323": AmberModbusSensorEntityDescription(
-        name="coolcurve zone 1",
+        name="Coolcurve zone 1",
         key="323",
         icon="mdi:chart-line",
         entity_registry_enabled_default=True,
     ),
     "320": AmberModbusSensorEntityDescription(
-        name="coolcurve 2 setpoint 1",
+        name="Coolcurve 2 setpoint 1",
         key="320",
         icon="mdi:water-thermometer-outline",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -617,7 +617,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "321": AmberModbusSensorEntityDescription(
-        name="coolcurve 2 setpoint 2",
+        name="Coolcurve 2 setpoint 2",
         key="321",
         icon="mdi:water-thermometer-outline",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -627,7 +627,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "322": AmberModbusSensorEntityDescription(
-        name="coolcurve 2 setpoint 3",
+        name="Coolcurve 2 setpoint 3",
         key="322",
         icon="mdi:water-thermometer-outline",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -637,13 +637,13 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "324": AmberModbusSensorEntityDescription(
-        name="coolcurve zone 2",
+        name="Coolcurve zone 2",
         key="324",
         icon="mdi:chart-line",
         entity_registry_enabled_default=True,
     ),
     "334": AmberModbusSensorEntityDescription(
-        name="max dhw setpoint setting",
+        name="Max dhw setpoint setting",
         key="334",
         icon="mdi:water-thermometer-outline",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -653,13 +653,13 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "339": AmberModbusSensorEntityDescription(
-        name="sg ready",
+        name="SG ready",
         key="339",
         icon="mdi:transmission-tower-export",
         entity_registry_enabled_default=True,
     ),
     "340": AmberModbusSensorEntityDescription(
-        name="sg increase setpoint heating",
+        name="SG increase setpoint heating",
         key="340",
         icon="mdi:water-thermometer-outline",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -669,7 +669,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "375": AmberModbusSensorEntityDescription(
-        name="sg increase setpoint dhw",
+        name="SG increase setpoint dhw",
         key="375",
         icon="mdi:water-thermometer-outline",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -679,7 +679,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "376": AmberModbusSensorEntityDescription(
-        name="sg decrease setrpoint cooling",
+        name="SG decrease setpoint cooling",
         key="376",
         icon="mdi:water-thermometer-outline",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -715,7 +715,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         icon="mdi:database-outline",
     ),
     "505": AmberModbusSensorEntityDescription(
-        name="water outlet temperature (TUO)",
+        name="Water outlet temperature (TUO)",
         key="505",
         icon="mdi:water-thermometer-outline",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -725,7 +725,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "506": AmberModbusSensorEntityDescription(
-        name="water inlet temperature (TUI)",
+        name="Water inlet temperature (TUI)",
         key="506",
         icon="mdi:water-thermometer-outline",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -754,7 +754,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "509": AmberModbusSensorEntityDescription(
-        name="Heating/Cooling watertemperature (TC)",
+        name="Heating/Cooling water temperature (TC)",
         key="509",
         icon="mdi:water-thermometer-outline",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -764,7 +764,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "510": AmberModbusSensorEntityDescription(
-        name="Heating/Cooling zone 1 watertemperature (TV1)",
+        name="Heating/Cooling zone 1 water temperature (TV1)",
         key="510",
         icon="mdi:water-thermometer-outline",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -774,7 +774,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "511": AmberModbusSensorEntityDescription(
-        name="Heating/Cooling zone 2 watertemperature (TV2)",
+        name="Heating/Cooling zone 2 water temperature (TV2)",
         key="511",
         icon="mdi:water-thermometer-outline",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -814,7 +814,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "518": AmberModbusSensorEntityDescription(
-        name="1h Average ambient temperature",
+        name="1h average ambient temperature",
         key="518",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
@@ -823,7 +823,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "519": AmberModbusSensorEntityDescription(
-        name="4h Average ambient temperature",
+        name="4h average ambient temperature",
         key="519",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
@@ -832,7 +832,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "520": AmberModbusSensorEntityDescription(
-        name="24h Average ambient temperature",
+        name="24h average ambient temperature",
         key="520",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
@@ -894,7 +894,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "528": AmberModbusSensorEntityDescription(
-        name="Running Current",
+        name="Running current",
         key="528",
         native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
         device_class=SensorDeviceClass.CURRENT,
@@ -903,7 +903,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "529": AmberModbusSensorEntityDescription(
-        name="Supply Voltage",
+        name="Supply voltage",
         key="529",
         native_unit_of_measurement=UnitOfElectricPotential.VOLT,
         device_class=SensorDeviceClass.VOLTAGE,
@@ -966,7 +966,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "538": AmberModbusSensorEntityDescription(
-        name="Mixing valve 1 ouputsignal",
+        name="Mixing valve 1 output signal",
         key="538",
         native_unit_of_measurement=UnitOfElectricPotential.VOLT,
         device_class=SensorDeviceClass.VOLTAGE,
@@ -975,7 +975,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "539": AmberModbusSensorEntityDescription(
-        name="Mixing valve 2 ouputsignal",
+        name="Mixing valve 2 output signal",
         key="539",
         native_unit_of_measurement=UnitOfElectricPotential.VOLT,
         device_class=SensorDeviceClass.VOLTAGE,
@@ -1002,7 +1002,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "P04": AmberModbusSensorEntityDescription(
-        name="P04 compresor oil return protection",
+        name="P04 compressor oil return protection",
         key="P04",
         icon="mdi:alert",
         entity_registry_enabled_default=True,
@@ -1056,7 +1056,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "P13": AmberModbusSensorEntityDescription(
-        name="P13 low pressure condensor pressure switch",
+        name="P13 low pressure condenser pressure switch",
         key="P13",
         icon="mdi:alert",
         entity_registry_enabled_default=True,
@@ -1086,7 +1086,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "F05": AmberModbusSensorEntityDescription(
-        name="F05 failure evporating pressure sensor (ps)",
+        name="F05 failure evaporating pressure sensor (ps)",
         key="F05",
         icon="mdi:alert",
         entity_registry_enabled_default=True,
@@ -1116,7 +1116,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "F11": AmberModbusSensorEntityDescription(
-        name="F11 evporating pressure failure (Ps)",
+        name="F11 evaporating pressure failure (Ps)",
         key="F11",
         icon="mdi:alert",
         entity_registry_enabled_default=True,
@@ -1128,7 +1128,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "F13": AmberModbusSensorEntityDescription(
-        name="F13 Room temperature sensor failure (Tr)",
+        name="F13 room temperature sensor failure (Tr)",
         key="F13",
         icon="mdi:alert",
         entity_registry_enabled_default=True,
@@ -1140,7 +1140,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "F15": AmberModbusSensorEntityDescription(
-        name="F15 Failure temperature control sensor (Tc)",
+        name="F15 failure temperature control sensor (Tc)",
         key="F15",
         icon="mdi:alert",
         entity_registry_enabled_default=True,
@@ -1206,7 +1206,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "E01": AmberModbusSensorEntityDescription(
-        name="E01 comm failure lcd indoorunit",
+        name="E01 comm failure lcd indoor unit",
         key="E01",
         icon="mdi:alert",
         entity_registry_enabled_default=True,
@@ -1248,7 +1248,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "E08": AmberModbusSensorEntityDescription(
-        name="E08 eeprom failure oudoor unit",
+        name="E08 eeprom failure outdoor unit",
         key="E08",
         icon="mdi:alert",
         entity_registry_enabled_default=True,
@@ -1326,7 +1326,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "703": AmberModbusSensorEntityDescription(
-        name="Actual setpoint heating zone 1 ",
+        name="Actual setpoint heating zone 1",
         key="703",
         icon="mdi:water-thermometer-outline",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -1336,7 +1336,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "704": AmberModbusSensorEntityDescription(
-        name="Actual setpoint heating zone 2 ",
+        name="Actual setpoint heating zone 2",
         key="704",
         icon="mdi:water-thermometer-outline",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -1346,7 +1346,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "714": AmberModbusSensorEntityDescription(
-        name="Actual setpoint cooling zone 1 ",
+        name="Actual setpoint cooling zone 1",
         key="714",
         icon="mdi:water-thermometer-outline",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -1356,7 +1356,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "715": AmberModbusSensorEntityDescription(
-        name="Actual setpoint cooling zone 2 ",
+        name="Actual setpoint cooling zone 2",
         key="715",
         icon="mdi:water-thermometer-outline",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
@@ -1375,7 +1375,7 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "connection_status": AmberModbusSensorEntityDescription(
-        name="Connection Status",
+        name="Connection status",
         key="connection_status",
         icon="mdi:lan-connect",
         entity_category=EntityCategory.DIAGNOSTIC,
@@ -1390,7 +1390,7 @@ class AmberModbusNumberEntityDescription(NumberEntityDescription):
 NUMBER_TYPES: dict[str, list[AmberModbusNumberEntityDescription]] = {
     # Writeble sensor values (numbers)
     "10": AmberModbusNumberEntityDescription(
-        name="outside temperature start heating",
+        name="Outside temperature start heating",
         key= "10",
         mode="slider",
         native_min_value= -10,
@@ -1400,7 +1400,7 @@ NUMBER_TYPES: dict[str, list[AmberModbusNumberEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "11": AmberModbusNumberEntityDescription(
-        name="outside temperature start cooling",
+        name="Outside temperature start cooling",
         key= "11",
         mode="slider",
         native_min_value= 20,
@@ -1410,7 +1410,7 @@ NUMBER_TYPES: dict[str, list[AmberModbusNumberEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "12": AmberModbusNumberEntityDescription(
-        name="duration min compressor speed",
+        name="Duration min compressor speed",
         key= "12",
         mode="slider",
         native_min_value= 5,
@@ -1420,7 +1420,7 @@ NUMBER_TYPES: dict[str, list[AmberModbusNumberEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "26": AmberModbusNumberEntityDescription(
-        name="heating and cooling stop",
+        name="Heating and cooling stop",
         key= "26",
         mode="slider",
         native_min_value= 1,
@@ -1431,7 +1431,7 @@ NUMBER_TYPES: dict[str, list[AmberModbusNumberEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "27": AmberModbusNumberEntityDescription(
-        name="heating and cooling restart",
+        name="Heating and cooling restart",
         key= "27",
         mode="slider",
         native_min_value= 1,
@@ -1442,7 +1442,7 @@ NUMBER_TYPES: dict[str, list[AmberModbusNumberEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "28": AmberModbusNumberEntityDescription(
-        name="compressor speed reduction",
+        name="Compressor speed reduction",
         key= "28",
         mode="slider",
         native_min_value= 1,
@@ -1596,7 +1596,7 @@ NUMBER_TYPES: dict[str, list[AmberModbusNumberEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "44": AmberModbusNumberEntityDescription(
-        name="zone 1 heating setpoint",
+        name="Zone 1 heating setpoint",
         key="44",
         mode="slider",
         native_min_value= 20,
@@ -1607,7 +1607,7 @@ NUMBER_TYPES: dict[str, list[AmberModbusNumberEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "45": AmberModbusNumberEntityDescription(
-        name="max setpoint setting zone 1",
+        name="Max setpoint setting zone 1",
         key="45",
         mode="slider",
         native_min_value= 18,
@@ -1618,7 +1618,7 @@ NUMBER_TYPES: dict[str, list[AmberModbusNumberEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "46": AmberModbusNumberEntityDescription(
-        name="min setpoint setting zone 1",
+        name="Min setpoint setting zone 1",
         key="46",
         mode="slider",
         native_min_value= 7,
@@ -1629,7 +1629,7 @@ NUMBER_TYPES: dict[str, list[AmberModbusNumberEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "54": AmberModbusNumberEntityDescription(
-        name="room temperature vacation mode",
+        name="Room temperature vacation mode",
         key="54",
         mode="slider",
         native_min_value= 1,
@@ -1639,7 +1639,7 @@ NUMBER_TYPES: dict[str, list[AmberModbusNumberEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "53": AmberModbusNumberEntityDescription(
-        name="restart dhw vacation mode",
+        name="Restart dhw vacation mode",
         key="53",
         mode="slider",
         native_min_value= 10,
@@ -1650,7 +1650,7 @@ NUMBER_TYPES: dict[str, list[AmberModbusNumberEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "61": AmberModbusNumberEntityDescription(
-        name="delay hbh",
+        name="Delay hbh",
         key= "61",
         mode="slider",
         native_min_value= 0,
@@ -1660,7 +1660,7 @@ NUMBER_TYPES: dict[str, list[AmberModbusNumberEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "64": AmberModbusNumberEntityDescription(
-        name="setpoint dhw",
+        name="Setpoint dhw",
         key="64",
         mode="slider",
         native_min_value= 25,
@@ -1671,7 +1671,7 @@ NUMBER_TYPES: dict[str, list[AmberModbusNumberEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "65": AmberModbusNumberEntityDescription(
-        name="restart dhw",
+        name="Restart dhw",
         key="65",
         mode="slider",
         native_min_value= 2,
@@ -1682,7 +1682,7 @@ NUMBER_TYPES: dict[str, list[AmberModbusNumberEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "91": AmberModbusNumberEntityDescription(
-        name="zone 2 cooling setpoint",
+        name="Zone 2 cooling setpoint",
         key="91",
         mode="slider",
         native_min_value= 7,
@@ -1748,7 +1748,7 @@ NUMBER_TYPES: dict[str, list[AmberModbusNumberEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "98": AmberModbusNumberEntityDescription(
-        name="zone 2 heating setpoint",
+        name="Zone 2 heating setpoint",
         key="98",
         mode="slider",
         native_min_value= 20,
@@ -1759,7 +1759,7 @@ NUMBER_TYPES: dict[str, list[AmberModbusNumberEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "99": AmberModbusNumberEntityDescription(
-        name="max setpoint setting zone 2",
+        name="Max setpoint setting zone 2",
         key="99",
         mode="slider",
         native_min_value= 16,
@@ -1770,7 +1770,7 @@ NUMBER_TYPES: dict[str, list[AmberModbusNumberEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "100": AmberModbusNumberEntityDescription(
-        name="min setpoint setting zone 2",
+        name="Min setpoint setting zone 2",
         key="100",
         mode="slider",
         native_min_value= 7,
@@ -1781,7 +1781,7 @@ NUMBER_TYPES: dict[str, list[AmberModbusNumberEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "102": AmberModbusNumberEntityDescription(
-        name="reduced mode setpoint",
+        name="Reduced mode setpoint",
         key="102",
         mode="slider",
         native_min_value= 2,
@@ -1792,7 +1792,7 @@ NUMBER_TYPES: dict[str, list[AmberModbusNumberEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "111": AmberModbusNumberEntityDescription(
-        name="reduced mode delta",
+        name="Reduced mode delta",
         key="111",
         mode="slider",
         native_min_value= 1,
@@ -1803,7 +1803,7 @@ NUMBER_TYPES: dict[str, list[AmberModbusNumberEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "133": AmberModbusNumberEntityDescription(
-        name="outsidetemperature start dhw eco mode",
+        name="Outside temperature start dhw eco mode",
         key="133",
         mode="slider",
         native_min_value= -20,
@@ -1813,7 +1813,7 @@ NUMBER_TYPES: dict[str, list[AmberModbusNumberEntityDescription]] = {
         entity_registry_enabled_default=True,
     ),
     "134": AmberModbusNumberEntityDescription(
-        name="outside temperature start external heating",
+        name="Outside temperature start external heating",
         key="134",
         mode="slider",
         native_min_value= -20,
@@ -1878,25 +1878,25 @@ SWITCH_TYPES: dict[str, list[AmberModbusSwitchEntityDescription]] = {
         device_class=SwitchDeviceClass.SWITCH,
     ),
     "5": AmberModbusSwitchEntityDescription(
-        name="dhw",
+        name="DHW",
         key="5",
         icon="mdi:toggle-switch-off-outline",
         device_class=SwitchDeviceClass.SWITCH,
     ),
     "6": AmberModbusSwitchEntityDescription(
-        name="heating",
+        name="Heating",
         key="6",
         icon="mdi:toggle-switch-off-outline",
         device_class=SwitchDeviceClass.SWITCH,
     ),
     "7": AmberModbusSwitchEntityDescription(
-        name="cooling",
+        name="Cooling",
         key="7",
         icon="mdi:toggle-switch-off-outline",
         device_class=SwitchDeviceClass.SWITCH,
     ),
     "30": AmberModbusSwitchEntityDescription(
-        name="Heat Curve zone 1",
+        name="Heat curve zone 1",
         key="30",
         icon="mdi:chart-line",
         device_class=SwitchDeviceClass.SWITCH
@@ -1908,80 +1908,80 @@ SWITCH_TYPES: dict[str, list[AmberModbusSwitchEntityDescription]] = {
         device_class=SwitchDeviceClass.SWITCH,
     ),
     "47": AmberModbusSwitchEntityDescription(
-        name="legionella mode",
+        name="Legionella mode",
         key="47",
         icon="mdi:chart-line",
         device_class=SwitchDeviceClass.SWITCH,
     ),
     "52": AmberModbusSwitchEntityDescription(
-        name="vacation mode",
+        name="Vacation mode",
         key="52",
         icon="mdi:calendar-clock-outline",
         device_class=SwitchDeviceClass.SWITCH,
     ),
     "59": AmberModbusSwitchEntityDescription(
-        name="hwtbh",
+        name="HWTBH",
         key="59",
         icon="mdi:toggle-switch-off-outline",
         device_class=SwitchDeviceClass.SWITCH,
     ),
     "63": AmberModbusSwitchEntityDescription(
-        name="allow emergency heating",
+        name="Allow emergency heating",
         key="63",
         icon="mdi:radiator",
         device_class=SwitchDeviceClass.SWITCH,
     ),
     "72": AmberModbusSwitchEntityDescription(
-        name="timer dhw",
+        name="Timer dhw",
         key="72",
         icon="mdi:clock-outline",
         device_class=SwitchDeviceClass.SWITCH,
     ),
     "90": AmberModbusSwitchEntityDescription(
         #
-        name="temperature zone 2",
+        name="Temperature zone 2",
         key="90",
         icon="mdi:home-thermometer-outline",
         device_class=SwitchDeviceClass.SWITCH,
     ),
     "92": AmberModbusSwitchEntityDescription(
-        name="Heat Curve zone 2",
+        name="Heat curve zone 2",
         key="92",
         icon="mdi:chart-line",
         device_class=SwitchDeviceClass.SWITCH,
     ),
     "101": AmberModbusSwitchEntityDescription(
-        name="reduced mode",
+        name="Reduced mode",
         key="101",
         icon="mdi:volume-off",
         device_class=SwitchDeviceClass.SWITCH,
     ),
     "110": AmberModbusSwitchEntityDescription(
-        name="timer reduced mode",
+        name="Timer reduced mode",
         key="110",
         icon="mdi:clock-outline",
         device_class=SwitchDeviceClass.SWITCH,
     ),
     "135": AmberModbusSwitchEntityDescription(
-        name="dhw eco mode",
+        name="DHW eco mode",
         key="135",
         icon="mdi:sprout",
         device_class=SwitchDeviceClass.SWITCH,
     ),
     "136": AmberModbusSwitchEntityDescription(
-        name="external heating allowed",
+        name="External heating allowed",
         key="136",
         icon="mdi:gas-burner",
         device_class=SwitchDeviceClass.SWITCH,
     ),
     "142": AmberModbusSwitchEntityDescription(
-        name="buffer tank",
+        name="Buffer tank",
         key="142",
         icon="mdi:water-boiler",
         device_class=SwitchDeviceClass.SWITCH,
     ),
     "217": AmberModbusSwitchEntityDescription(
-        name="block external heating",
+        name="Block external heating",
         key="217",
         icon="mdi:radiator-off",
         device_class=SwitchDeviceClass.SWITCH,
@@ -2023,7 +2023,7 @@ class AmberModbusSelectEntityHWTBHPriorityDescription(SelectEntityDescription):
 SELECT_HWTBH: dict[str, list[AmberModbusSelectEntityHWTBHPriorityDescription]] = { 
 
     "60": AmberModbusSelectEntityHWTBHPriorityDescription(
-        name="hwtbh priority",
+        name="HWTBH priority",
         key="60",
         icon="mdi:menu-open",
         entity_registry_enabled_default=True,

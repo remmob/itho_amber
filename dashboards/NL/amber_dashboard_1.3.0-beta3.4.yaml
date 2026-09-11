@@ -22,7 +22,7 @@ views:
             name: Condensatietemperatuur (Tup)
           - entity: sensor.amber_dhw_temperature_tw
             name: Tapwatertemperatuur (Tw)
-          - entity: sensor.amber_heating_cooling_watertemperature_tc
+          - entity: sensor.amber_heating_cooling_water_temperature_tc
             name: CV-aanvoertemperatuur verwarmen/koelen
           - entity: sensor.amber_compressor_speed
             name: Toerental compressor
@@ -56,9 +56,9 @@ views:
         entities:
           - entity: sensor.amber_software_version_outdoor_unit
             name: Outdoor unit software version
-          - entity: sensor.amber_heating_cooling_zone_1_watertemperature_tv1
+          - entity: sensor.amber_heating_cooling_zone_1_water_temperature_tv1
             name: Heating/Cooling zone 1 watertemp -TV1
-          - entity: sensor.amber_heating_cooling_zone_2_watertemperature_tv2
+          - entity: sensor.amber_heating_cooling_zone_2_water_temperature_tv2
             name: Heating/Cooling zone 2 watertemp -TV2
           - entity: sensor.amber_current_operating_mode
             name: Current operatingmode
@@ -82,9 +82,9 @@ views:
             name: High demand control signal (HD)
           - entity: sensor.amber_pwm_waterpump_signal
             name: PWM signaal (pomp snelheid)
-          - entity: sensor.amber_mixing_valve_1_ouputsignal
+          - entity: sensor.amber_mixing_valve_1_output_signal
             name: Mixing valve 1 output 0-10V signal
-          - entity: sensor.amber_mixing_valve_2_ouputsignal
+          - entity: sensor.amber_mixing_valve_2_output_signal
             name: Mixing valve 2 output 0-10V signal
           - entity: select.amber_working_mode
             name: Working mode
@@ -334,9 +334,9 @@ views:
             name: Noodbedrijf hulpverwarming
           - entity: switch.amber_block_external_heating
             name: Blokkeren bijstook CV
-          - entity: sensor.amber_block_external_heating_on_outsidetemperature
+          - entity: sensor.amber_block_external_heating_on_outside_temperature
             name: Blokkeren bijstook CV temperatuurregeling
-          - entity: sensor.amber_setpoint_block_external_heating_on_outsidetemperature
+          - entity: sensor.amber_setpoint_block_external_heating_on_outside_temperature
             name: Max buitentemperatuur blokkeren bijstook CV
         title: Menu 10 (bijverwarming)
         show_header_toggle: false
@@ -390,7 +390,7 @@ views:
             name: SG ready verwarmen ∆T
           - entity: sensor.amber_sg_increase_setpoint_dhw
             name: SG ready tapwater verwarmen ∆T
-          - entity: sensor.amber_sg_decrease_setrpoint_cooling
+          - entity: sensor.amber_sg_decrease_setpoint_cooling
             name: SG ready koelen ∆T
         title: Menu 12 (hybride)
         show_header_toggle: false
@@ -435,11 +435,11 @@ views:
             name: F02 - Storing verdamper temperatuur sensor (Tp)
             secondary_info: none
           - entity: >-
-              sensor.amber_f03_failure_compressor_discharge_temperature_sensor_tp
+              sensor.amber_f03_failure_compressor_discharge_temperature_sensor_td
             name: F03 - Storing persgas temperatuur sensor (Td)
           - entity: sensor.amber_f04_failure_compressor_suction_temperature_sensor_ts
             name: F04 - Storing zuiggas temperatuur sensor (Ts)
-          - entity: sensor.amber_f05_failure_evporating_pressure_sensor_ps
+          - entity: sensor.amber_f05_failure_evaporating_pressure_sensor_ps
             name: F05 - Storing lage druk sensor (Ps)
           - entity: sensor.amber_f06_failure_high_pressure_sensor_pd
             name: F06 - Storing condensatie druk sensor (Pd)
@@ -449,7 +449,7 @@ views:
             name: F09 - Storing A ventilator motor
           - entity: sensor.amber_f10_failure_b_fan_motor
             name: F10 - Storing B ventilator motor
-          - entity: sensor.amber_f11_evporating_pressure_failure_ps
+          - entity: sensor.amber_f11_evaporating_pressure_failure_ps
             name: F11 - Lage druk storing (Ps)
           - entity: sensor.amber_f12_high_pressure_failure_pd
             name: F12 - Hoge druk storing (Pd)
@@ -482,7 +482,7 @@ views:
         title: F - Foutcodes
       - type: entities
         entities:
-          - entity: sensor.amber_e01_comm_failure_lcd_indoorunit
+          - entity: sensor.amber_e01_comm_failure_lcd_indoor_unit
             name: E01 - Communicatie storing tussen LCD en binnenunit
           - entity: sensor.amber_e02_failure_outdoor_pcb_compressor_inverter
             name: >-
@@ -498,7 +498,7 @@ views:
             name: E06 - Storing VDC module
           - entity: sensor.amber_e07_ac_current_failure
             name: 'E07 - Storing wisselstroom '
-          - entity: sensor.amber_e08_eeprom_failure_oudoor_unit
+          - entity: sensor.amber_e08_eeprom_failure_outdoor_unit
             name: E08 - Storing EEPROM buitenunit
         title: E - Foutcodes
         show_header_toggle: false
@@ -538,7 +538,7 @@ views:
             name: P02 - Stroombeveiliging compressor
           - entity: sensor.amber_p03_ipm_module_protection
             name: P03 - Hoge temperatuurbeveiliging inverter PCB
-          - entity: sensor.amber_p04_compresor_oil_return_protection
+          - entity: sensor.amber_p04_compressor_oil_return_protection
             name: P04 - Terugstroom beveiliging comperssor olie
           - entity: sensor.amber_p05_high_pressure_refrigerant_circuit
             name: P05 - Te hoge druk koudemiddel circuit
@@ -556,6 +556,6 @@ views:
             name: P11 - Compressor stop buitentemperatuur
           - entity: sensor.amber_p12_frequency_limit_compressor
             name: P12 - Toerental begrensing compressor
-          - entity: sensor.amber_p13_low_pressure_condensor_pressure_switch
+          - entity: sensor.amber_p13_low_pressure_condenser_pressure_switch
             name: P13 - Lagedruk condensor druk schakelaar
         title: P - Foutcodes

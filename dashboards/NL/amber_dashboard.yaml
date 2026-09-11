@@ -272,7 +272,7 @@ views:
             name: SG ready verwarmen ∆T
           - entity: sensor.amber_sg_increase_setpoint_dhw
             name: SG ready tapwater verwarmen ∆T
-          - entity: sensor.amber_sg_decrease_setrpoint_cooling
+          - entity: sensor.amber_sg_decrease_setpoint_cooling
             name: SG ready koelen ∆T
         title: Menu 12 (hybride)
         show_header_toggle: false
@@ -377,9 +377,9 @@ views:
             name: High demand control signal (HD)
           - entity: sensor.amber_pwm_waterpump_signal
             name: PWM signaal (pomp snelheid)
-          - entity: sensor.amber_mixing_valve_1_ouputsignal
+          - entity: sensor.amber_mixing_valve_1_output_signal
             name: Mixing valve 1 output 0-10V signal
-          - entity: sensor.amber_mixing_valve_2_ouputsignal
+          - entity: sensor.amber_mixing_valve_2_output_signal
             name: Mixing valve 2 output 0-10V signal
           - entity: select.amber_working_mode
             name: Working mode

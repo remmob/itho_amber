@@ -18,15 +18,15 @@ MIGRATIONS = {
         "new_name": "DHW temperature (TW)",
     },
     "sensor.amber_heating_cooling_watertemperture_tc":{
-        "new_entity_id": "sensor.amber_heating_cooling_watertemperature_tc",
+        "new_entity_id": "sensor.amber_heating_cooling_water_temperature_tc",
         "new_name": "Heating/Cooling watertemperature (TC)",
     },
     "sensor.amber_heating_cooling_zone_1_watertemperture_tv1":{
-        "new_entity_id": "sensor.amber_heating_cooling_zone_1_watertemperature_tv1",
+        "new_entity_id": "sensor.amber_heating_cooling_zone_1_water_temperature_tv1",
         "new_name": "Heating/Cooling zone 1 watertemperature (TV1)",
     },
     "sensor.amber_heating_cooling_zone_2_watertemperture_tv2":{
-        "new_entity_id": "sensor.amber_heating_cooling_zone_2_watertemperature_tv2",
+        "new_entity_id": "sensor.amber_heating_cooling_zone_2_water_temperature_tv2",
         "new_name": "Heating/Cooling zone 2 watertemperature (TV2)",
     },
     "sensor.amber_ambient_temperture_ta":{
@@ -71,7 +71,7 @@ MIGRATIONS = {
         "new_name": "F02 failure outdoor temperature sensor (Tp)"
     },
     "sensor.amber_f03_failure_compressor_discharge_temperture_sensor_tp":{
-        "new_entity_id": "sensor.amber_f03_failure_compressor_discharge_temperature_sensor_tp",
+        "new_entity_id": "sensor.amber_f03_failure_compressor_discharge_temperature_sensor_td",
         "new_name": "F03 failure compressor discharge temperature sensor (Td)"
     },
     "sensor.amber_f04_failure_compressor_suction_temperture_sensor_ts":{
@@ -164,11 +164,11 @@ MIGRATIONS = {
         "new_name": "water stop temperature frost protection second stage"
     },
     "sensor.amber_block_external_heating_on_outsidetemperture":{
-        "new_entity_id": "sensor.amber_block_external_heating_on_outsidetemperature",
+        "new_entity_id": "sensor.amber_block_external_heating_on_outside_temperature",
         "new_name": "block external heating on outsidetemperature"
     },
     "sensor.amber_setpoint_block_external_heating_on_outsidetemperture":{
-        "new_entity_id": "sensor.amber_setpoint_block_external_heating_on_outsidetemperature",
+        "new_entity_id": "sensor.amber_setpoint_block_external_heating_on_outside_temperature",
         "new_name": "setpoint block external heating on outsidetemperature"
     },
     "sensor.amber_coolcurve_outside_temperture_1":{
@@ -236,30 +236,114 @@ MIGRATIONS = {
         "new_entity_id": "switch.amber_temperature_zone_2",
         "new_name": "temperature zone 2"
     },
+    # 1.4.0-beta3: spelling / spacing fixes in entity names
+    "sensor.amber_heating_cooling_watertemperature_tc": {
+        "new_entity_id": "sensor.amber_heating_cooling_water_temperature_tc",
+        "new_name": "Heating/Cooling water temperature (TC)",
+    },
+    "sensor.amber_heating_cooling_zone_1_watertemperature_tv1": {
+        "new_entity_id": "sensor.amber_heating_cooling_zone_1_water_temperature_tv1",
+        "new_name": "Heating/Cooling zone 1 water temperature (TV1)",
+    },
+    "sensor.amber_heating_cooling_zone_2_watertemperature_tv2": {
+        "new_entity_id": "sensor.amber_heating_cooling_zone_2_water_temperature_tv2",
+        "new_name": "Heating/Cooling zone 2 water temperature (TV2)",
+    },
+    "sensor.amber_block_external_heating_on_outsidetemperature": {
+        "new_entity_id": "sensor.amber_block_external_heating_on_outside_temperature",
+        "new_name": "Block external heating on outside temperature",
+    },
+    "sensor.amber_setpoint_block_external_heating_on_outsidetemperature": {
+        "new_entity_id": "sensor.amber_setpoint_block_external_heating_on_outside_temperature",
+        "new_name": "Setpoint block external heating on outside temperature",
+    },
+    "number.amber_outsidetemperature_start_dhw_eco_mode": {
+        "new_entity_id": "number.amber_outside_temperature_start_dhw_eco_mode",
+        "new_name": "Outside temperature start dhw eco mode",
+    },
+    "sensor.amber_sg_decrease_setrpoint_cooling": {
+        "new_entity_id": "sensor.amber_sg_decrease_setpoint_cooling",
+        "new_name": "SG decrease setpoint cooling",
+    },
+    "sensor.amber_mixing_valve_1_ouputsignal": {
+        "new_entity_id": "sensor.amber_mixing_valve_1_output_signal",
+        "new_name": "Mixing valve 1 output signal",
+    },
+    "sensor.amber_mixing_valve_2_ouputsignal": {
+        "new_entity_id": "sensor.amber_mixing_valve_2_output_signal",
+        "new_name": "Mixing valve 2 output signal",
+    },
+    "sensor.amber_p04_compresor_oil_return_protection": {
+        "new_entity_id": "sensor.amber_p04_compressor_oil_return_protection",
+        "new_name": "P04 compressor oil return protection",
+    },
+    "sensor.amber_p13_low_pressure_condensor_pressure_switch": {
+        "new_entity_id": "sensor.amber_p13_low_pressure_condenser_pressure_switch",
+        "new_name": "P13 low pressure condenser pressure switch",
+    },
+    "sensor.amber_f05_failure_evporating_pressure_sensor_ps": {
+        "new_entity_id": "sensor.amber_f05_failure_evaporating_pressure_sensor_ps",
+        "new_name": "F05 failure evaporating pressure sensor (ps)",
+    },
+    "sensor.amber_f11_evporating_pressure_failure_ps": {
+        "new_entity_id": "sensor.amber_f11_evaporating_pressure_failure_ps",
+        "new_name": "F11 evaporating pressure failure (Ps)",
+    },
+    "sensor.amber_e01_comm_failure_lcd_indoorunit": {
+        "new_entity_id": "sensor.amber_e01_comm_failure_lcd_indoor_unit",
+        "new_name": "E01 comm failure lcd indoor unit",
+    },
+    "sensor.amber_e08_eeprom_failure_oudoor_unit": {
+        "new_entity_id": "sensor.amber_e08_eeprom_failure_outdoor_unit",
+        "new_name": "E08 eeprom failure outdoor unit",
+    },
+    # The entity name says (Td) but the earlier migration and the alarm
+    # monitor used _tp, so a fresh install was never monitored for F03.
+    "sensor.amber_f03_failure_compressor_discharge_temperature_sensor_tp": {
+        "new_entity_id": "sensor.amber_f03_failure_compressor_discharge_temperature_sensor_td",
+        "new_name": "F03 failure compressor discharge temperature sensor (Td)",
+    },
 }
+
+# Names an earlier version of this migration wrote into the entity registry
+# as a user override. Only these are ever cleared again - a name the user
+# chose themselves is left alone.
+_MIGRATION_NAMES = {data["new_name"] for data in MIGRATIONS.values()}
+
 
 async def async_migrate_temperature_typo(hass):
     er = async_get_entity_registry(hass)
-    changed = False 
-     
-    for old_entity_id, data in MIGRATIONS.items(): 
-        entity = er.entities.get(old_entity_id) 
-        if entity is None:
-            #_LOGGER.debug("Migration: %s not found, skipping", old_entity_id) 
-            continue 
-            
-        _LOGGER.warning( 
-            "Migration: renaming %s → %s",
-            old_entity_id, 
-            data["new_entity_id"], 
-        ) 
-            
-        er.async_update_entity(
-            old_entity_id, 
-            new_entity_id=data["new_entity_id"], 
-            name=data["new_name"], 
-        )
+    changed = False
 
+    for old_entity_id, data in MIGRATIONS.items():
+        entity = er.entities.get(old_entity_id)
+        if entity is None:
+            continue
+        if er.async_get(data["new_entity_id"]) is not None:
+            _LOGGER.warning(
+                "Migration: cannot rename %s, %s already exists",
+                old_entity_id,
+                data["new_entity_id"],
+            )
+            continue
+
+        _LOGGER.warning(
+            "Migration: renaming %s -> %s", old_entity_id, data["new_entity_id"]
+        )
+        kwargs = {"new_entity_id": data["new_entity_id"]}
+        if entity.name in _MIGRATION_NAMES:
+            kwargs["name"] = None
+        er.async_update_entity(old_entity_id, **kwargs)
         changed = True
+
+    # Installs migrated by an earlier version still carry the old lowercase
+    # (sometimes misspelled) name as a registry override, which hides the
+    # corrected name from const.py. Clear it.
+    for data in MIGRATIONS.values():
+        entity = er.entities.get(data["new_entity_id"])
+        if entity is not None and entity.name in _MIGRATION_NAMES:
+            _LOGGER.info("Migration: clearing name override on %s", data["new_entity_id"])
+            er.async_update_entity(data["new_entity_id"], name=None)
+            changed = True
 
     return changed
