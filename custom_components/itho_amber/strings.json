@@ -98,6 +98,10 @@
         "time": {
           "name": "Start time",
           "description": "The time the programme starts on the selected days."
+        },
+        "device_id": {
+          "name": "Heat pump",
+          "description": "The Amber heat pump to set. Only needed when more than one is set up."
         }
       }
     }

@@ -1,8 +1,11 @@
 set_legionella_schedule:
-  target:
-    device:
-      integration: itho_amber
   fields:
+    device_id:
+      required: false
+      selector:
+        device:
+          integration: itho_amber
+          multiple: true
     days:
       required: true
       example: "[monday, thursday]"

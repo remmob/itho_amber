@@ -98,6 +98,10 @@
         "time": {
           "name": "Starttijd",
           "description": "Het tijdstip waarop het programma op de gekozen dagen start."
+        },
+        "device_id": {
+          "name": "Warmtepomp",
+          "description": "De Amber-warmtepomp die je wilt instellen. Alleen nodig als er meer dan een is ingesteld."
         }
       }
     }
