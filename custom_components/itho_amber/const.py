@@ -247,6 +247,50 @@ ACTIVE_STATUS = {
     1: "Active"
 }
 
+# --- Legionella schedule ---------------------------------------------------
+#
+# The heat pump stores the anti-legionella schedule in two registers that sit
+# far apart, both confirmed by measurement on a real unit (2026-09-16):
+#
+#   register 48  - day mask, bit 0 = Sunday ... bit 6 = Saturday. More than one
+#                  day at a time is simply the sum of the bits.
+#   register 457 - start time, bit 0-5 the hour (0-23) and bit 6-12 the minutes
+#                  (0-59), so `(minute << 6) | hour`. The Itho Modbus list calls
+#                  this one "Germicidal start date".
+#
+# Both are writable at user level; the installer code is not needed.
+REG_LEGIONELLA_DAYS = 48
+REG_LEGIONELLA_TIME = 457
+
+# Index in this list is the bit number in register 48.
+LEGIONELLA_DAYS = [
+    "sunday",
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+]
+
+SERVICE_SET_LEGIONELLA_SCHEDULE = "set_legionella_schedule"
+
+# Software version suffix as shown on the heat pump display.
+#
+# The version number itself comes from register 501 (229 -> "2.29"); register
+# 502 holds a code for the build behind it. The display renders a label for
+# that code, so the suffix cannot be derived from the number - it has to be
+# looked up. Codes confirmed on a real unit:
+#   3 -> firmware 2.29-T3 (register 502 read 3 before the update)
+#   1 -> firmware 2.29-Z  (register 502 read 1 after the update)
+# An unknown code is logged once with a warning and the version is reported
+# without a suffix, so the sensor never shows a build the heat pump does not
+# report. Add new codes here as they turn up.
+SOFTWARE_VERSION_SUFFIX = {
+    1: "Z",
+    3: "T3",
+}
+
 @dataclass
 class AmberModbusSensorEntityDescription(SensorEntityDescription):
     """Amber sensor entities."""
@@ -703,6 +747,13 @@ SENSOR_TYPES: dict[str, list[AmberModbusSensorEntityDescription]] = {
         name="Software version",
         key="501",
         icon="mdi:database-outline",
+    ),
+    "502": AmberModbusSensorEntityDescription(
+        name="Software version code",
+        key="502",
+        icon="mdi:tag-outline",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=True,
     ),
     "503": AmberModbusSensorEntityDescription(
         name="Database version",
@@ -1469,7 +1520,7 @@ NUMBER_TYPES: dict[str, list[AmberModbusNumberEntityDescription]] = {
         mode="slider",
         native_min_value= -25,
         native_max_value= 25,
-        icon="mdi:thermometer-outline",
+        icon="mdi:sun-thermometer-outline",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
         entity_registry_enabled_default=True,
@@ -1480,7 +1531,7 @@ NUMBER_TYPES: dict[str, list[AmberModbusNumberEntityDescription]] = {
         mode="slider",
         native_min_value= -25,
         native_max_value= 25,
-        icon="mdi:thermometer-outline",
+        icon="mdi:sun-thermometer-outline",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
         entity_registry_enabled_default=True,
@@ -1491,7 +1542,7 @@ NUMBER_TYPES: dict[str, list[AmberModbusNumberEntityDescription]] = {
         mode="slider",
         native_min_value= -25,
         native_max_value= 25,
-        icon="mdi:thermometer-outline",
+        icon="mdi:sun-thermometer-outline",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
         entity_registry_enabled_default=True,
@@ -1502,7 +1553,7 @@ NUMBER_TYPES: dict[str, list[AmberModbusNumberEntityDescription]] = {
         mode="slider",
         native_min_value= -25,
         native_max_value= 25,
-        icon="mdi:thermometer-outline",
+        icon="mdi:sun-thermometer-outline",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
         entity_registry_enabled_default=True,
@@ -1513,7 +1564,7 @@ NUMBER_TYPES: dict[str, list[AmberModbusNumberEntityDescription]] = {
         mode="slider",
         native_min_value= -25,
         native_max_value= 25,
-        icon="mdi:thermometer-outline",
+        icon="mdi:sun-thermometer-outline",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
         entity_registry_enabled_default=True,
@@ -1579,7 +1630,7 @@ NUMBER_TYPES: dict[str, list[AmberModbusNumberEntityDescription]] = {
         mode="slider",
         native_min_value= 15,
         native_max_value= 35,
-        icon="mdi:thermometer-outline",
+        icon="mdi:home-thermometer-outline",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
         entity_registry_enabled_default=True,
@@ -1590,7 +1641,7 @@ NUMBER_TYPES: dict[str, list[AmberModbusNumberEntityDescription]] = {
         mode="slider",
         native_min_value= 15,
         native_max_value= 35,
-        icon="mdi:thermometer-outline",
+        icon="mdi:home-thermometer-outline",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
         entity_registry_enabled_default=True,

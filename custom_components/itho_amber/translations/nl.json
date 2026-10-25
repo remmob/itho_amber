@@ -85,5 +85,34 @@
       "invalid_host": "Ongeldig IP-adres of hostnaam",
       "invalid_notify_service": "Ongeldige notify service(s). Controleer of de service bestaat in Home Assistant."
     }
+  },
+  "services": {
+    "set_legionella_schedule": {
+      "name": "Legionellaschema instellen",
+      "description": "Schrijft de dagen en de starttijd van het legionellaprogramma in een keer naar de warmtepomp. Er wordt niets geschreven tot deze actie draait.",
+      "fields": {
+        "days": {
+          "name": "Dagen",
+          "description": "De dagen waarop het programma draait. Kies geen enkele dag om het uit te zetten."
+        },
+        "time": {
+          "name": "Starttijd",
+          "description": "Het tijdstip waarop het programma op de gekozen dagen start."
+        }
+      }
+    }
+  },
+  "selector": {
+    "legionella_days": {
+      "options": {
+        "monday": "Maandag",
+        "tuesday": "Dinsdag",
+        "wednesday": "Woensdag",
+        "thursday": "Donderdag",
+        "friday": "Vrijdag",
+        "saturday": "Zaterdag",
+        "sunday": "Zondag"
+      }
+    }
   }
 }

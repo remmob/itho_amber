@@ -85,5 +85,34 @@
       "invalid_host": "Invalid IP address or hostname",
       "invalid_notify_service": "Invalid notify service(s). Check if the service exists in Home Assistant."
     }
+  },
+  "services": {
+    "set_legionella_schedule": {
+      "name": "Set legionella schedule",
+      "description": "Writes the days and the start time of the anti-legionella programme to the heat pump in one go. Nothing is written until this action runs.",
+      "fields": {
+        "days": {
+          "name": "Days",
+          "description": "The days the programme should run. Pick none to disable it."
+        },
+        "time": {
+          "name": "Start time",
+          "description": "The time the programme starts on the selected days."
+        }
+      }
+    }
+  },
+  "selector": {
+    "legionella_days": {
+      "options": {
+        "monday": "Monday",
+        "tuesday": "Tuesday",
+        "wednesday": "Wednesday",
+        "thursday": "Thursday",
+        "friday": "Friday",
+        "saturday": "Saturday",
+        "sunday": "Sunday"
+      }
+    }
   }
 }

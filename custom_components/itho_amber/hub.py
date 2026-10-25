@@ -31,7 +31,8 @@ from homeassistant.core import CALLBACK_TYPE, callback, HomeAssistant
 from .const import (
     DOMAIN, LOGIN_STATUS, ON_OFF_STATUS, PUMP_TYPE, CURRENT_OPERATION_MODE,
     EXTERNAL_CONTROL, HWTBH_PRIORITY_MODE, MODE_SIGNAL_TYPE, MODE_SIGNAL_OUTPUT,
-    DISPLAY_TIME, FAILURE_STATUS, ACTIVE_STATUS)
+    DISPLAY_TIME, FAILURE_STATUS, ACTIVE_STATUS, SOFTWARE_VERSION_SUFFIX,
+    REG_LEGIONELLA_DAYS, REG_LEGIONELLA_TIME, LEGIONELLA_DAYS)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -49,6 +50,7 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         super().__init__(hass, _LOGGER, name=name, update_interval=timedelta(seconds=scan_interval))
 
         self._unit = unit
+        self._unknown_version_codes: set[int] = set()
         self._flush_running = False
         self._flush_pending = False
         self._ha_started = False
@@ -143,6 +145,77 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
         pymodbus - each register above 0x7FFF becomes negative.
         """
         return [v - 0x10000 if v > 0x7FFF else v for v in values]
+
+    def _decode_version_suffix(self, code: int) -> str | None:
+        """Look up the software version suffix for the version code in register 502.
+
+        Returns the suffix the heat pump display shows behind the version number,
+        e.g. "Z" or "T3", or None when the code is not known yet.
+
+        Earlier releases hardcoded a literal "T" and appended a number decoded
+        from another register, so the sensor kept reporting the suffix of the
+        firmware the integration was written against. A firmware update that
+        changed only the suffix left the sensor showing the old one. An unknown
+        code is reported without a suffix instead of with a made up one; the
+        raw code stays visible in the "Software version code" sensor so it can
+        be added to SOFTWARE_VERSION_SUFFIX.
+        """
+        suffix = SOFTWARE_VERSION_SUFFIX.get(code)
+        if suffix is None and code not in self._unknown_version_codes:
+            self._unknown_version_codes.add(code)
+            _LOGGER.warning(
+                f"Unknown software version code {code} in register 502. The software "
+                f"version is reported without a suffix. Please report this code together "
+                f"with the version shown on the heat pump display so it can be added."
+            )
+        return suffix
+
+    # --- Legionella schedule ------------------------------------------------
+    #
+    # Register 48 holds a day mask (bit 0 = Sunday ... bit 6 = Saturday) and
+    # register 457 the start time packed as `(minute << 6) | hour`. Both were
+    # confirmed against the heat pump display; see const.py for the details.
+
+    @staticmethod
+    def decode_legionella_days(mask: int) -> list[str]:
+        """Return the day names set in the register 48 bit mask."""
+        return [day for bit, day in enumerate(LEGIONELLA_DAYS) if mask >> bit & 1]
+
+    @staticmethod
+    def encode_legionella_days(days: list[str]) -> int:
+        """Return the register 48 bit mask for these day names."""
+        mask = 0
+        for day in days:
+            mask |= 1 << LEGIONELLA_DAYS.index(day)
+        return mask
+
+    @staticmethod
+    def decode_legionella_time(packed: int) -> tuple[int, int]:
+        """Return (hour, minute) from the register 457 value."""
+        return packed & 0x3F, (packed >> 6) & 0x3F
+
+    @staticmethod
+    def encode_legionella_time(hour: int, minute: int) -> int:
+        """Return the register 457 value for this time."""
+        return ((minute & 0x3F) << 6) | (hour & 0x3F)
+
+    def write_legionella_schedule(self, days_mask: int, hour: int, minute: int) -> None:
+        """Write the whole legionella schedule as one burst.
+
+        Both registers go through the existing write queue, so the debounce
+        timer collects them into a single flush followed by one refresh. That
+        keeps the day mask and the start time from being written half a second
+        apart, and it means nothing reaches the heat pump until this method is
+        called - entities never write on their own.
+        """
+        packed_time = self.encode_legionella_time(hour, minute)
+        _LOGGER.debug(
+            f"Writing legionella schedule: days mask {days_mask} "
+            f"({', '.join(self.decode_legionella_days(days_mask)) or 'none'}), "
+            f"time {hour:02d}:{minute:02d} -> register {REG_LEGIONELLA_TIME} = {packed_time}"
+        )
+        self.write_registers(REG_LEGIONELLA_DAYS, days_mask & 0x7F)
+        self.write_registers(REG_LEGIONELLA_TIME, packed_time)
 
     async def _async_update_data(self) -> dict:
         """Fetch Modbus data safely with clear logging and consistent return handling."""
@@ -436,7 +509,7 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
 
             # --- Decode realtime values ---
             realtime_keys = {
-                501: (register_map[501], 0.01, "V{}-T{}"),
+                501: (register_map[501], 0.01, "V{}"),
                 502: (register_map[502], None, None),
                 503: (register_map[503], None, None),
                 504: (register_map[504], 0.01, "V{}"),
@@ -482,9 +555,17 @@ class AmberModbusHub(DataUpdateCoordinator[dict]):
 
                     if fmt:
                         if key == 501:
-                            t_raw = newdecoder[register_map[503]]
-                            t = t_raw >> 5
-                            data[str(key)] = fmt.format(str(val), t)
+                            # Software version: the number comes from register 501,
+                            # the suffix behind it from the version code in register
+                            # 502 (code 1 -> "2.29-Z", code 3 -> "2.29-T3").
+                            code = newdecoder[register_map[502]]
+                            suffix = self._decode_version_suffix(code)
+                            version = fmt.format(str(val))
+                            data[str(key)] = f"{version}-{suffix}" if suffix else version
+                            _LOGGER.debug(
+                                f"Software version decode: 501={newdecoder[index]} -> {val}, "
+                                f"502={code} -> suffix {suffix!r}, result {data[str(key)]!r}"
+                            )
                         else:
                             data[str(key)] = fmt.format(val)
                     else:

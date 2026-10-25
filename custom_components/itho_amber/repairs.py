@@ -347,3 +347,42 @@ async def async_migrate_temperature_typo(hass):
             changed = True
 
     return changed
+
+# Entity IDs that Home Assistant generated before the two hand written sensors
+# pinned their own. Those got the full device name in front of them, which does
+# not match the register based entities (plain sensor.amber_*). The classes now
+# set the short ID themselves; this renames the ones that already exist.
+LONG_ENTITY_IDS = {
+    "sensor.itho_amber_65_95_120_heatpump_integration_amber_connection_method":
+        "sensor.amber_connection_method",
+    "sensor.itho_amber_65_95_120_heatpump_integration_amber_legionella_schedule":
+        "sensor.amber_legionella_schedule",
+}
+
+
+async def async_migrate_long_entity_ids(hass):
+    """Shorten entity IDs that carry the device name, keeping history intact.
+
+    Renaming through the entity registry moves the recorder history along, so
+    this is friendlier than letting the user delete and recreate the entity.
+    """
+    er = async_get_entity_registry(hass)
+    changed = False
+
+    for old_entity_id, new_entity_id in LONG_ENTITY_IDS.items():
+        entity = er.entities.get(old_entity_id)
+        if entity is None:
+            continue
+        if er.async_get(new_entity_id) is not None:
+            _LOGGER.warning(
+                "Migration: cannot rename %s, %s already exists",
+                old_entity_id,
+                new_entity_id,
+            )
+            continue
+
+        _LOGGER.warning("Migration: renaming %s -> %s", old_entity_id, new_entity_id)
+        er.async_update_entity(old_entity_id, new_entity_id=new_entity_id)
+        changed = True
+
+    return changed

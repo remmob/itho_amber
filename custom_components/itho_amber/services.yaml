@@ -1,0 +1,26 @@
+set_legionella_schedule:
+  target:
+    device:
+      integration: itho_amber
+  fields:
+    days:
+      required: true
+      example: "[monday, thursday]"
+      selector:
+        select:
+          multiple: true
+          mode: list
+          translation_key: legionella_days
+          options:
+            - monday
+            - tuesday
+            - wednesday
+            - thursday
+            - friday
+            - saturday
+            - sunday
+    time:
+      required: true
+      example: "06:45:00"
+      selector:
+        time:

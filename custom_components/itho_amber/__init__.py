@@ -16,14 +16,19 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PORT, CONF_SCAN_INTERVAL
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, ServiceCall, callback
+from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import device_registry as dr
 
 from . import connection
-from .repairs import async_migrate_temperature_typo
+from .frontend import async_register_frontend
+from .repairs import async_migrate_long_entity_ids, async_migrate_temperature_typo
 
 from .const import (
     DOMAIN,
     DEFAULT_NAME,
+    LEGIONELLA_DAYS,
+    SERVICE_SET_LEGIONELLA_SCHEDULE,
     DEFAULT_SCAN_INTERVAL,
     # New notification config
     CONF_NOTIFY_ALARMS_MOBILE,
@@ -150,9 +155,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Start alarm monitoring after all entities are set up
     alarm_monitor.start_monitoring()
 
+    _async_register_services(hass)
+
+    # Serve the integration's own Lovelace cards. A failure here must not stop
+    # the heat pump from working, so it is logged and shrugged off.
+    try:
+        await async_register_frontend(hass)
+    except Exception as err:
+        _LOGGER.error("Could not register the frontend cards: %s", err)
+
     # Perform migration automatically 
     try:
         changed = await async_migrate_temperature_typo(hass)
+        changed = await async_migrate_long_entity_ids(hass) or changed
         if changed:
             _LOGGER.info("Automatic entity ID migration completed successfully.")
     except Exception as err:
@@ -186,4 +201,80 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if name in hass.data[DOMAIN]:
             hass.data[DOMAIN].pop(name)
 
+        # Drop the actions once the last hub is gone, otherwise they would be
+        # offered in the UI without anything behind them.
+        if not hass.data[DOMAIN]:
+            hass.services.async_remove(DOMAIN, SERVICE_SET_LEGIONELLA_SCHEDULE)
+
     return unload_ok
+
+
+SET_LEGIONELLA_SCHEDULE_SCHEMA = vol.Schema(
+    {
+        vol.Required("days"): vol.All(cv.ensure_list, [vol.In(LEGIONELLA_DAYS)]),
+        vol.Required("time"): cv.time,
+        vol.Optional("device_id"): vol.All(cv.ensure_list, [cv.string]),
+    }
+)
+
+
+def _resolve_hub(hass: HomeAssistant, device_id: str | None):
+    """Return the hub this action should act on.
+
+    With a single Amber there is nothing to choose, so `device_id` may be left
+    out. With more than one it is required, and it is resolved through the
+    device registry because that is what the UI hands us.
+    """
+    hubs = hass.data.get(DOMAIN, {})
+    if not hubs:
+        raise HomeAssistantError("No Amber heat pump is set up")
+
+    if device_id is None:
+        if len(hubs) > 1:
+            raise HomeAssistantError(
+                "More than one Amber heat pump is set up, so a device must be selected"
+            )
+        return next(iter(hubs.values()))["hub"]
+
+    device = dr.async_get(hass).async_get(device_id)
+    if device is None:
+        raise HomeAssistantError(f"Unknown device {device_id}")
+
+    for domain, hub_name in device.identifiers:
+        if domain == DOMAIN and hub_name in hubs:
+            return hubs[hub_name]["hub"]
+
+    raise HomeAssistantError(f"Device {device_id} is not an Amber heat pump")
+
+
+@callback
+def _async_register_services(hass: HomeAssistant) -> None:
+    """Register the integration actions once."""
+    if hass.services.has_service(DOMAIN, SERVICE_SET_LEGIONELLA_SCHEDULE):
+        return
+
+    async def async_set_legionella_schedule(call: ServiceCall) -> None:
+        """Write the legionella day mask and start time in one go."""
+        days = call.data["days"]
+        start = call.data["time"]
+
+        # A target in the UI arrives as a list; without one there has to be a
+        # single heat pump and _resolve_hub falls back to it.
+        device_ids = call.data.get("device_id") or [None]
+        for device_id in device_ids:
+            hub = _resolve_hub(hass, device_id)
+            mask = hub.encode_legionella_days(days)
+            hub.write_legionella_schedule(mask, start.hour, start.minute)
+            _LOGGER.info(
+                "Legionella schedule set to %s at %02d:%02d",
+                ", ".join(days) or "no days",
+                start.hour,
+                start.minute,
+            )
+
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_SET_LEGIONELLA_SCHEDULE,
+        async_set_legionella_schedule,
+        schema=SET_LEGIONELLA_SCHEDULE_SCHEMA,
+    )

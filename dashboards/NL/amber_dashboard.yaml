@@ -89,7 +89,7 @@ views:
           - entity: select.amber_working_mode
             name: Working mode
           - entity: switch.amber_amber_on_off
-            name: Amber ON/OFF (groene knop !)
+            name: Amber ON/OFF
         show_header_toggle: false
         title: Menu (extra sensoren)
       - type: entities
@@ -107,6 +107,11 @@ views:
             name: Huidig setpoint cooling zone 2
             icon: mdi:thermometer-water
         title: Huidige setpoints
+      - type: entities
+        entities:
+          - entity: sensor.amber_connection_status
+            name: Verbindings status
+        title: Verbindingsstatus
   - type: masonry
     path: settings
     title: Settings
@@ -270,6 +275,10 @@ views:
         entities:
           - entity: switch.amber_legionella_mode
             name: Legionella preventie
+          - type: custom:amber-legionella-card
+            entity: sensor.amber_legionella_schedule
+            name: Legionella schema
+            row: false
           - entity: sensor.amber_legionella_setpoint
             name: Doel temperatuur
           - entity: sensor.amber_legionella_duration
