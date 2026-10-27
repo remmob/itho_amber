@@ -1,0 +1,41 @@
+name: Prune pre-releases
+
+# Keeps the release list short. After a new beta only the two newest
+# pre-releases stay listed; after a stable release every beta of that version
+# goes. Only the release pages are removed: the git tags stay, so any beta can
+# still be checked out or published again. Beta release notes are cumulative,
+# so the newest beta still carries the notes of the removed ones.
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete old pre-releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          TAG: ${{ github.event.release.tag_name }}
+          PRERELEASE: ${{ github.event.release.prerelease }}
+        run: |
+          # Published pre-releases, newest first.
+          betas=$(gh api "repos/$REPO/releases?per_page=100" --paginate \
+            --jq '.[] | select(.prerelease and (.draft | not)) | "\(.published_at) \(.tag_name)"' \
+            | sort -r | awk '{print $2}')
+
+          if [ "$PRERELEASE" = "true" ]; then
+            doomed=$(echo "$betas" | tail -n +3)
+          else
+            version="${TAG#[vV]}"
+            doomed=$(echo "$betas" | grep -iE "^v${version//./\\.}-" || true)
+          fi
+
+          for tag in $doomed; do
+            echo "Removing release $tag (tag is kept)"
+            gh release delete "$tag" --yes -R "$REPO"
+          done
