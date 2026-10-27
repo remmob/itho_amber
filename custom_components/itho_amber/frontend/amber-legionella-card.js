@@ -32,6 +32,11 @@ const DAY_KEYS = [
   "sunday",
 ];
 
+// How solid the dialog panel and the time field on it are drawn in the card
+// colour; the rest shows the blurred dashboard.
+const PANEL_OPACITY = 0.7;
+const FIELD_OPACITY = 0.8;
+
 // 2024-01-01 was a Monday, so this gives one date per weekday in display order.
 const DAY_DATES = DAY_KEYS.map((_, index) => new Date(Date.UTC(2024, 0, 1 + index)));
 
@@ -50,7 +55,6 @@ const STYLES = `
     outline: 2px solid var(--primary-color);
     outline-offset: -2px;
   }
-  .summary:hover { background: rgba(var(--rgb-primary-text-color, 0, 0, 0), 0.04); }
 
   .icon {
     flex: 0 0 auto;
@@ -71,35 +75,48 @@ const STYLES = `
     color: var(--secondary-text-color);
   }
 
-  .value {
+  /* Round icon button in the style of Home Assistant's own ha-icon-button. */
+  .edit {
     flex: 0 0 auto;
-    color: var(--secondary-text-color);
-    text-align: right;
-  }
-
-  .chevron { flex: 0 0 auto; width: 20px; height: 20px; color: var(--secondary-text-color); }
-  .chevron svg { width: 100%; height: 100%; fill: currentColor; }
-
-  .backdrop {
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.45);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 9;
-    padding: 16px;
-    box-sizing: border-box;
+    width: 40px;
+    height: 40px;
+    margin: -8px -8px -8px 0;
+    border-radius: 50%;
+    color: var(--state-icon-color, var(--paper-item-icon-color, #44739e));
+    transition: background 120ms ease-in-out;
   }
+  .edit svg { width: 24px; height: 24px; fill: currentColor; }
+  .summary:hover .edit { background: rgba(var(--rgb-primary-text-color, 0, 0, 0), 0.08); }
 
+  /* A native dialog opened with showModal() lives in the browser's top layer,
+     so themes that put a transform or backdrop-filter on ha-card cannot pull
+     it into the card the way they do with position: fixed. */
+  dialog.overlay {
+    padding: 0;
+    border: none;
+    background: transparent;
+    width: calc(100vw - 32px);
+    max-width: 420px;
+    max-height: calc(100vh - 32px);
+    overflow: visible;
+    color: var(--primary-text-color);
+  }
+  dialog.overlay::backdrop { background: rgba(0, 0, 0, 0.55); }
+
+  /* Same colour as the cards; glass themes make that far too translucent
+     for a dialog, so _applyPanelBackground() keeps the colour and sets the
+     opacity itself. */
   .dialog {
     background: var(--ha-card-background, var(--card-background-color, #fff));
     color: var(--primary-text-color);
     border-radius: var(--ha-card-border-radius, 12px);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-    width: 100%;
-    max-width: 420px;
-    max-height: 100%;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    max-height: calc(100vh - 32px);
     overflow: auto;
     padding: 24px;
     box-sizing: border-box;
@@ -192,10 +209,29 @@ const STYLES = `
   .actions button[disabled] { opacity: 0.5; cursor: default; }
 `;
 
+// "rgb(r, g, b)" or "rgba(r, g, b, a)" as computed by the browser.
+function parseRgb(color) {
+  const match = /rgba?\(([^)]+)\)/.exec(color || "");
+  if (!match) return null;
+  const parts = match[1].split(",").map((part) => parseFloat(part));
+  return { r: parts[0], g: parts[1], b: parts[2], a: parts.length > 3 ? parts[3] : 1 };
+}
+
+function alphaOf(color) {
+  const rgb = parseRgb(color);
+  return rgb ? rgb.a : 0;
+}
+
+function luminance({ r, g, b }) {
+  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+}
+
 const ICON_CALENDAR =
   "M19 3h-1V1h-2v2H8V1H6v2H5a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2m0 " +
   "18H5V9h14zM5 7V5h14v2zm7 3.5a5 5 0 1 0 5 5 5 5 0 0 0-5-5m1.75 7.4L11.5 16.5V13h1v3l1.9 1.1z";
-const ICON_CHEVRON = "M8.6 16.6 13.2 12 8.6 7.4 10 6l6 6-6 6z";
+const ICON_PENCIL =
+  "M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 " +
+  "17.25V21h3.75L17.81 9.93l-3.75-3.75z";
 
 class AmberLegionellaCard extends HTMLElement {
   constructor() {
@@ -207,7 +243,6 @@ class AmberLegionellaCard extends HTMLElement {
     this._busy = false;
     this._note = "";
     this._error = false;
-    this._onKeyDown = this._onKeyDown.bind(this);
   }
 
   static getStubConfig() {
@@ -237,7 +272,9 @@ class AmberLegionellaCard extends HTMLElement {
   }
 
   disconnectedCallback() {
-    window.removeEventListener("keydown", this._onKeyDown);
+    const dialog = this.shadowRoot.querySelector("dialog.overlay");
+    if (dialog && dialog.open) dialog.close();
+    this._open = false;
   }
 
   // --- state helpers -------------------------------------------------------
@@ -311,21 +348,12 @@ class AmberLegionellaCard extends HTMLElement {
     this._error = false;
     this._busy = false;
     this._open = true;
-    window.addEventListener("keydown", this._onKeyDown);
     this._render();
   }
 
   _closeDialog() {
     this._open = false;
-    window.removeEventListener("keydown", this._onKeyDown);
     this._render();
-  }
-
-  _onKeyDown(event) {
-    if (event.key === "Escape" && this._open && !this._busy) {
-      event.stopPropagation();
-      this._closeDialog();
-    }
   }
 
   _toggleDay(day) {
@@ -396,7 +424,8 @@ class AmberLegionellaCard extends HTMLElement {
     const root = this.shadowRoot;
 
     if (!this._built) {
-      root.innerHTML = `<style>${STYLES}</style><div id="root"></div>`;
+      root.innerHTML = `<style>${STYLES}</style><div id="root"></div><dialog class="overlay"></dialog>`;
+      this._wireOverlay();
       this._built = true;
     }
 
@@ -410,12 +439,21 @@ class AmberLegionellaCard extends HTMLElement {
           <div class="name">${name}</div>
           ${stateObj ? "" : `<div class="hint">${this._config.entity} not found</div>`}
         </div>
-        <div class="value">${this._summaryText()}</div>
-        <div class="chevron"><svg viewBox="0 0 24 24"><path d="${ICON_CHEVRON}"></path></svg></div>
+        <div class="edit" title="${this._summaryText()}"><svg viewBox="0 0 24 24"><path d="${ICON_PENCIL}"></path></svg></div>
       </div>`;
 
     const body = this._config.row ? summary : `<ha-card>${summary}</ha-card>`;
-    root.querySelector("#root").innerHTML = body + (this._open ? this._dialogHtml(name) : "");
+    root.querySelector("#root").innerHTML = body;
+
+    const overlay = root.querySelector("dialog.overlay");
+    if (this._open) {
+      overlay.innerHTML = this._dialogHtml(name);
+      if (!overlay.open) overlay.showModal();
+      this._wireDialog();
+    } else {
+      overlay.innerHTML = "";
+      if (overlay.open) overlay.close();
+    }
 
     const summaryEl = root.querySelector(".summary");
     summaryEl.addEventListener("click", () => this._openDialog());
@@ -425,13 +463,27 @@ class AmberLegionellaCard extends HTMLElement {
         this._openDialog();
       }
     });
+  }
 
-    if (this._open) this._wireDialog();
+  // Listeners on the dialog element itself survive re-renders of its content,
+  // so they are attached once.
+  _wireOverlay() {
+    const overlay = this.shadowRoot.querySelector("dialog.overlay");
+    // Escape fires "cancel"; the dialog closes through our own state instead.
+    overlay.addEventListener("cancel", (event) => {
+      event.preventDefault();
+      if (!this._busy) this._closeDialog();
+    });
+    // The dialog element has no padding, so a click whose target is the
+    // element itself landed on the backdrop.
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay && !this._busy) this._closeDialog();
+    });
   }
 
   _renderSummary() {
-    const value = this.shadowRoot.querySelector(".value");
-    if (value) value.textContent = this._summaryText();
+    const edit = this.shadowRoot.querySelector(".edit");
+    if (edit) edit.title = this._summaryText();
   }
 
   _dialogHtml(name) {
@@ -449,8 +501,7 @@ class AmberLegionellaCard extends HTMLElement {
         : "Runs on the selected days at the time below";
 
     return `
-      <div class="backdrop">
-        <div class="dialog" role="dialog" aria-modal="true" aria-label="${name}">
+        <div class="dialog" aria-label="${name}">
           <h2>${name}</h2>
           <p class="subtitle">${subtitle}</p>
           <div class="days">${chips}</div>
@@ -467,8 +518,37 @@ class AmberLegionellaCard extends HTMLElement {
       this._busy ? "Saving" : "Save"
     }</button>
           </div>
-        </div>
-      </div>`;
+        </div>`;
+  }
+
+  // --- theme fallbacks -----------------------------------------------------
+
+  // Glass themes give cards a translucent background; behind a modal that
+  // leaves the text on top of the dashboard. Keep the card colour but draw it
+  // at PANEL_OPACITY, with a blur behind it so the text stays readable. Only
+  // a fully transparent card (no colour to keep) falls back to the page
+  // background, and then to a plain colour.
+  _applyPanelBackground(panel) {
+    panel.style.background = "";
+    if (alphaOf(getComputedStyle(panel).backgroundColor) === 0) {
+      panel.style.background = "var(--primary-background-color)";
+      if (alphaOf(getComputedStyle(panel).backgroundColor) === 0) {
+        const dark = this._hass && this._hass.themes && this._hass.themes.darkMode;
+        panel.style.background = dark ? "#1c1c1c" : "#ffffff";
+      }
+    }
+    const rgb = parseRgb(getComputedStyle(panel).backgroundColor);
+    if (rgb) panel.style.background = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${PANEL_OPACITY})`;
+    return rgb;
+  }
+
+  // A theme with a light primary colour and white --text-primary-color makes
+  // the selected chips white on white, so pick the text colour by luminance.
+  _fixChipContrast() {
+    this.shadowRoot.querySelectorAll('.chip[aria-pressed="true"]').forEach((chip) => {
+      const rgb = parseRgb(getComputedStyle(chip).backgroundColor);
+      if (rgb) chip.style.color = luminance(rgb) > 0.5 ? "#000" : "#fff";
+    });
   }
 
   _wireDialog() {
@@ -491,9 +571,16 @@ class AmberLegionellaCard extends HTMLElement {
     root.querySelector(".save").addEventListener("click", () => {
       if (!this._busy) this._save();
     });
-    root.querySelector(".backdrop").addEventListener("click", (event) => {
-      if (event.target.classList.contains("backdrop") && !this._busy) this._closeDialog();
-    });
+    const panel = root.querySelector(".dialog");
+    const panelRgb = this._applyPanelBackground(panel);
+    this._fixChipContrast();
+    if (panelRgb) {
+      const { r, g, b } = panelRgb;
+      time.style.background = `rgba(${r}, ${g}, ${b}, ${FIELD_OPACITY})`;
+      // The clock icon of a time input follows color-scheme, not the text
+      // colour, so tell the browser how dark the panel really is.
+      time.style.colorScheme = luminance(panelRgb) > 0.5 ? "light" : "dark";
+    }
 
     const firstChip = root.querySelector(".chip");
     if (firstChip) firstChip.focus();
