@@ -3,8 +3,7 @@
 from __future__ import annotations
 import logging
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from homeassistant.components.sensor import ENTITY_ID_FORMAT, SensorEntity
-from homeassistant.helpers.entity import async_generate_entity_id
+from homeassistant.components.sensor import SensorEntity
 from homeassistant.const import CONF_NAME, EntityCategory
 from homeassistant.core import callback
 import homeassistant.util.dt as dt_util
@@ -121,13 +120,9 @@ class AmberConnectionMethodSensor(CoordinatorEntity, SensorEntity):
         """Initialize the sensor."""
         self._platform_name = platform_name
         self._attr_device_info = device_info
-        # Without an explicit entity_id Home Assistant prefixes the full device
-        # name, which would give sensor.itho_amber_65_95_120_heatpump_
-        # integration_amber_connection_method. The register based entities are
-        # plain sensor.amber_*, so match that.
-        self.entity_id = async_generate_entity_id(
-            ENTITY_ID_FORMAT, f"{platform_name}_connection_method", hass=hub.hass
-        )
+        # No fixed entity_id: whether Home Assistant puts the device name in
+        # front differs per install, so async_align_new_entity_ids gives this
+        # one the same prefix as the other entities after setup.
 
         super().__init__(coordinator=hub)
 
@@ -173,10 +168,7 @@ class AmberLegionellaScheduleSensor(CoordinatorEntity, SensorEntity):
         self._platform_name = platform_name
         self._hub = hub
         self._attr_device_info = device_info
-        # See AmberConnectionMethodSensor: keep the short, consistent entity_id.
-        self.entity_id = async_generate_entity_id(
-            ENTITY_ID_FORMAT, f"{platform_name}_legionella_schedule", hass=hub.hass
-        )
+        # See AmberConnectionMethodSensor for why there is no fixed entity_id.
 
         super().__init__(coordinator=hub)
 

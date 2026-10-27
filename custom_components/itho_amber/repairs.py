@@ -1,5 +1,9 @@
 import logging
+from homeassistant.const import CONF_NAME
 from homeassistant.helpers.entity_registry import async_get as async_get_entity_registry
+from homeassistant.util import slugify
+
+from .const import DOMAIN, NUMBER_TYPES, SENSOR_TYPES, SWITCH_TYPES
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -311,78 +315,174 @@ MIGRATIONS = {
 _MIGRATION_NAMES = {data["new_name"] for data in MIGRATIONS.values()}
 
 
-async def async_migrate_temperature_typo(hass):
-    er = async_get_entity_registry(hass)
-    changed = False
-
-    for old_entity_id, data in MIGRATIONS.items():
-        entity = er.entities.get(old_entity_id)
-        if entity is None:
-            continue
-        if er.async_get(data["new_entity_id"]) is not None:
-            _LOGGER.warning(
-                "Migration: cannot rename %s, %s already exists",
-                old_entity_id,
-                data["new_entity_id"],
-            )
-            continue
-
-        _LOGGER.warning(
-            "Migration: renaming %s -> %s", old_entity_id, data["new_entity_id"]
-        )
-        kwargs = {"new_entity_id": data["new_entity_id"]}
-        if entity.name in _MIGRATION_NAMES:
-            kwargs["name"] = None
-        er.async_update_entity(old_entity_id, **kwargs)
-        changed = True
-
-    # Installs migrated by an earlier version still carry the old lowercase
-    # (sometimes misspelled) name as a registry override, which hides the
-    # corrected name from const.py. Clear it.
-    for data in MIGRATIONS.values():
-        entity = er.entities.get(data["new_entity_id"])
-        if entity is not None and entity.name in _MIGRATION_NAMES:
-            _LOGGER.info("Migration: clearing name override on %s", data["new_entity_id"])
-            er.async_update_entity(data["new_entity_id"], name=None)
-            changed = True
-
-    return changed
-
-# Entity IDs that Home Assistant generated before the two hand written sensors
-# pinned their own. Those got the full device name in front of them, which does
-# not match the register based entities (plain sensor.amber_*). The classes now
-# set the short ID themselves; this renames the ones that already exist.
-LONG_ENTITY_IDS = {
-    "sensor.itho_amber_65_95_120_heatpump_integration_amber_connection_method":
-        "sensor.amber_connection_method",
-    "sensor.itho_amber_65_95_120_heatpump_integration_amber_legionella_schedule":
-        "sensor.amber_legionella_schedule",
-}
+def _tail(entity_id: str) -> tuple[str, str]:
+    """Split a MIGRATIONS entity ID into its domain and the part after `amber_`."""
+    domain, object_id = entity_id.split(".", 1)
+    return domain, object_id.removeprefix("amber_")
 
 
-async def async_migrate_long_entity_ids(hass):
-    """Shorten entity IDs that carry the device name, keeping history intact.
+# The renames as (domain, old tail, new tail). The keys of MIGRATIONS are the
+# entity IDs of an install whose hub is called "Amber" and whose IDs carry no
+# device name, but plenty of installs have a longer prefix in front, such as
+# sensor.itho_amber_65_95_120_heatpump_integration_amber_*, or a hub with
+# another name. Matching on the tail and keeping whatever prefix the entity
+# has covers all of them.
+_TAIL_RENAMES = [
+    (*_tail(old_entity_id), _tail(data["new_entity_id"])[1])
+    for old_entity_id, data in MIGRATIONS.items()
+]
 
-    Renaming through the entity registry moves the recorder history along, so
-    this is friendlier than letting the user delete and recreate the entity.
+
+def _integration_entities(er):
+    """Return the registry entries of this integration (snapshot)."""
+    return [entity for entity in er.entities.values() if entity.platform == DOMAIN]
+
+
+def _renamed_entity_id(entity_id: str) -> str | None:
+    """Return the corrected entity ID, or None when it needs no rename.
+
+    The longest matching tail wins, so a short tail that happens to end a
+    longer one never cuts into it.
     """
+    domain, object_id = entity_id.split(".", 1)
+    best = None
+    for rename_domain, old_tail, new_tail in _TAIL_RENAMES:
+        if rename_domain != domain:
+            continue
+        if object_id != old_tail and not object_id.endswith(f"_{old_tail}"):
+            continue
+        if best is None or len(old_tail) > len(best[0]):
+            best = (old_tail, new_tail)
+
+    if best is None:
+        return None
+    old_tail, new_tail = best
+    return f"{domain}.{object_id[: len(object_id) - len(old_tail)]}{new_tail}"
+
+
+async def async_migrate_temperature_typo(hass):
+    """Fix misspelled entity IDs of this integration, keeping history intact."""
     er = async_get_entity_registry(hass)
     changed = False
 
-    for old_entity_id, new_entity_id in LONG_ENTITY_IDS.items():
-        entity = er.entities.get(old_entity_id)
-        if entity is None:
+    for entity in _integration_entities(er):
+        new_entity_id = _renamed_entity_id(entity.entity_id)
+        if new_entity_id is None:
             continue
         if er.async_get(new_entity_id) is not None:
             _LOGGER.warning(
                 "Migration: cannot rename %s, %s already exists",
-                old_entity_id,
+                entity.entity_id,
                 new_entity_id,
             )
             continue
 
-        _LOGGER.warning("Migration: renaming %s -> %s", old_entity_id, new_entity_id)
-        er.async_update_entity(old_entity_id, new_entity_id=new_entity_id)
+        _LOGGER.warning("Migration: renaming %s -> %s", entity.entity_id, new_entity_id)
+        kwargs = {"new_entity_id": new_entity_id}
+        if entity.name in _MIGRATION_NAMES:
+            kwargs["name"] = None
+        er.async_update_entity(entity.entity_id, **kwargs)
         changed = True
+
+    # Installs migrated by an earlier version still carry the old lowercase
+    # (sometimes misspelled) name as a registry override, which hides the
+    # corrected name from const.py. Clear it. A name the user chose is never in
+    # _MIGRATION_NAMES, so it is left alone.
+    new_tails = {(domain, new_tail) for domain, _old, new_tail in _TAIL_RENAMES}
+    for entity in _integration_entities(er):
+        if entity.name not in _MIGRATION_NAMES:
+            continue
+        domain, object_id = entity.entity_id.split(".", 1)
+        if any(
+            domain == tail_domain
+            and (object_id == tail or object_id.endswith(f"_{tail}"))
+            for tail_domain, tail in new_tails
+        ):
+            _LOGGER.info("Migration: clearing name override on %s", entity.entity_id)
+            er.async_update_entity(entity.entity_id, name=None)
+            changed = True
+
+    return changed
+
+
+# Entities added in 1.4.0 that are not in SENSOR_TYPES' original set. Home
+# Assistant does not always generate entity IDs the same way: depending on the
+# version it put the device name in front or not. An existing install therefore
+# has either sensor.amber_* or sensor.itho_amber_65_95_120_heatpump_integration_
+# amber_* for its older entities, while these new ones may have come out the
+# other way. They are renamed to the prefix the rest of that install uses.
+NEW_ENTITY_TAILS = {
+    "connection_method": "Connection method",
+    "legionella_schedule": "Legionella schedule",
+    "502": "Software version code",
+}
+
+
+def _entity_id_prefix(er, hub_name: str) -> str | None:
+    """Return the prefix in front of `<hub>_<name>` that most entities use.
+
+    Every register entity's ID was generated from "<hub> <name>", so whatever
+    precedes that slug is the prefix of this install ("" for plain
+    sensor.amber_*). Entities the user renamed, or whose name changed since,
+    simply do not match and are outvoted. None when there is nothing to go by.
+    """
+    votes: dict[str, int] = {}
+    for platform, types in (
+        ("sensor", SENSOR_TYPES),
+        ("number", NUMBER_TYPES),
+        ("switch", SWITCH_TYPES),
+    ):
+        for key, description in types.items():
+            if key in NEW_ENTITY_TAILS:
+                continue
+            entity_id = er.async_get_entity_id(platform, DOMAIN, f"{hub_name}_{key}")
+            if entity_id is None:
+                continue
+            object_id = entity_id.split(".", 1)[1]
+            expected = slugify(f"{hub_name} {description.name}")
+            if object_id == expected or object_id.endswith(f"_{expected}"):
+                prefix = object_id[: len(object_id) - len(expected)]
+                votes[prefix] = votes.get(prefix, 0) + 1
+
+    if not votes:
+        return None
+    return max(votes, key=votes.get)
+
+
+async def async_align_new_entity_ids(hass):
+    """Give the entities added in 1.4.0 the same prefix as the rest.
+
+    Replaces the 1.4.0-beta4 migration, which always shortened them to
+    sensor.amber_* and so made them the odd ones out on an install whose other
+    entities carry the device name. Renaming through the entity registry moves
+    the recorder history along.
+    """
+    er = async_get_entity_registry(hass)
+    changed = False
+
+    for entry in hass.config_entries.async_entries(DOMAIN):
+        hub_name = entry.data.get(CONF_NAME)
+        if not hub_name:
+            continue
+        prefix = _entity_id_prefix(er, hub_name)
+        if prefix is None:
+            continue
+
+        for key, name in NEW_ENTITY_TAILS.items():
+            entity_id = er.async_get_entity_id("sensor", DOMAIN, f"{hub_name}_{key}")
+            if entity_id is None:
+                continue
+            wanted = f"sensor.{prefix}{slugify(f'{hub_name} {name}')}"
+            if entity_id == wanted:
+                continue
+            if er.async_get(wanted) is not None:
+                _LOGGER.warning(
+                    "Migration: cannot rename %s, %s already exists", entity_id, wanted
+                )
+                continue
+
+            _LOGGER.warning("Migration: renaming %s -> %s", entity_id, wanted)
+            er.async_update_entity(entity_id, new_entity_id=wanted)
+            changed = True
 
     return changed

@@ -22,7 +22,7 @@ from homeassistant.helpers import device_registry as dr
 
 from . import connection
 from .frontend import async_register_frontend
-from .repairs import async_migrate_long_entity_ids, async_migrate_temperature_typo
+from .repairs import async_align_new_entity_ids, async_migrate_temperature_typo
 
 from .const import (
     DOMAIN,
@@ -167,7 +167,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Perform migration automatically 
     try:
         changed = await async_migrate_temperature_typo(hass)
-        changed = await async_migrate_long_entity_ids(hass) or changed
+        changed = await async_align_new_entity_ids(hass) or changed
         if changed:
             _LOGGER.info("Automatic entity ID migration completed successfully.")
     except Exception as err:

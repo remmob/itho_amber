@@ -242,9 +242,29 @@ class AmberLegionellaCard extends HTMLElement {
 
   // --- state helpers -------------------------------------------------------
 
-  get _stateObj() {
+  // The configured entity, or else the integration's own schedule sensor.
+  // Depending on the Home Assistant version an install has
+  // sensor.amber_legionella_schedule or the same with the device name in
+  // front, and the integration may rename it to match the other entities, so
+  // a dashboard copied from elsewhere keeps working either way.
+  get _entityId() {
     if (!this._hass || !this._config) return null;
-    return this._hass.states[this._config.entity] || null;
+    const configured = this._config.entity;
+    if (this._hass.states[configured]) return configured;
+
+    const entities = this._hass.entities || {};
+    const found = Object.keys(entities).find(
+      (entityId) =>
+        entities[entityId].platform === SERVICE_DOMAIN &&
+        entityId.startsWith("sensor.") &&
+        entityId.endsWith("_legionella_schedule")
+    );
+    return found || configured;
+  }
+
+  get _stateObj() {
+    const entityId = this._entityId;
+    return (entityId && this._hass.states[entityId]) || null;
   }
 
   get _dayLabels() {
@@ -341,7 +361,7 @@ class AmberLegionellaCard extends HTMLElement {
     // than one Amber. Older frontends do not expose the entity registry here,
     // and then the action falls back to the only hub there is.
     const entities = this._hass && this._hass.entities;
-    const entry = entities && entities[this._config.entity];
+    const entry = entities && entities[this._entityId];
     return (entry && entry.device_id) || undefined;
   }
 
